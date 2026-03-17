@@ -143,61 +143,45 @@ export default function AdminListaScreen() {
       </ScrollView>
 
       {/* MODAL DE EDIÇÃO DIGITAL */}
-      <Modal animationType="slide" transparent={true} visible={modalVisivel} onRequestClose={() => setModalVisivel(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlayBottom}>
-          <View style={styles.modalContentEdicao}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Editar Recurso</Text>
-              <TouchableOpacity onPress={() => setModalVisivel(false)} style={styles.btnFecharModal}>
-                <Text style={styles.txtFecharModal}>X</Text>
-              </TouchableOpacity>
-            </View>
+        {modalVisivel && (
+        <View style={styles.modalOverlayBottom}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', maxHeight: '90%' }}>
+            <View style={styles.modalContentEdicao}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Editar Recurso</Text>
+                <TouchableOpacity onPress={() => setModalVisivel(false)} style={styles.btnFecharModal}><Text style={styles.txtFecharModal}>X</Text></TouchableOpacity>
+              </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text style={styles.label}>Nome</Text>
-              <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholderTextColor="#52525B" />
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                <Text style={styles.label}>Nome</Text>
+                <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholderTextColor="#52525B" />
 
-              <Text style={styles.label}>Categoria</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollChips} keyboardShouldPersistTaps="handled">
-                {categorias.map(cat => (
-                  <TouchableOpacity key={cat} style={[styles.chip, tipo === cat && styles.chipAtivo]} onPress={() => setTipo(cat)}>
-                    <Text style={[styles.chipTexto, tipo === cat && styles.chipTextoAtivo]}>{cat}</Text>
-                  </TouchableOpacity>
-                ))}
+                <View style={styles.blocoTempo}>
+                  <Text style={styles.labelTempo}>TEMPO MÍNIMO (HH:MM)</Text>
+                  <View style={styles.relogioDigitalContainer}>
+                    <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={minH} onChangeText={(v) => validarEntradaTempo(v, 48, setMinH)} />
+                    <Text style={styles.separadorRelogio}>:</Text>
+                    <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={minM} onChangeText={(v) => validarEntradaTempo(v, 59, setMinM)} />
+                  </View>
+                </View>
+
+                <View style={styles.blocoTempo}>
+                  <Text style={styles.labelTempo}>TEMPO MÁXIMO (HH:MM)</Text>
+                  <View style={styles.relogioDigitalContainer}>
+                    <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={maxH} onChangeText={(v) => validarEntradaTempo(v, 48, setMaxH)} />
+                    <Text style={styles.separadorRelogio}>:</Text>
+                    <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={maxM} onChangeText={(v) => validarEntradaTempo(v, 59, setMaxM)} />
+                  </View>
+                </View>
+
+                {aviso ? <View style={[styles.caixaMensagem, tipoAviso === 'erro' ? styles.caixaErro : styles.caixaSucesso]}><Text style={[styles.textoMensagem, tipoAviso === 'erro' ? styles.textoErro : styles.textoSucesso]}>{aviso}</Text></View> : null}
+                <TouchableOpacity style={styles.btnConfirmar} onPress={handleSalvarEdicao}><Text style={styles.txtConfirmar}>Salvar Alterações</Text></TouchableOpacity>
+                <View style={{height: 20}} />
               </ScrollView>
-
-              <View style={styles.blocoTempo}>
-                <Text style={styles.labelTempo}>TEMPO MÍNIMO (HH:MM)</Text>
-                <View style={styles.relogioDigitalContainer}>
-                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={minH} onChangeText={(v) => validarEntradaTempo(v, 48, setMinH)} />
-                  <Text style={styles.separadorRelogio}>:</Text>
-                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={minM} onChangeText={(v) => validarEntradaTempo(v, 59, setMinM)} />
-                </View>
-              </View>
-
-              <View style={styles.blocoTempo}>
-                <Text style={styles.labelTempo}>TEMPO MÁXIMO (HH:MM)</Text>
-                <View style={styles.relogioDigitalContainer}>
-                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={maxH} onChangeText={(v) => validarEntradaTempo(v, 48, setMaxH)} />
-                  <Text style={styles.separadorRelogio}>:</Text>
-                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={maxM} onChangeText={(v) => validarEntradaTempo(v, 59, setMaxM)} />
-                </View>
-              </View>
-
-              {aviso ? (
-                <View style={[styles.caixaMensagem, tipoAviso === 'erro' ? styles.caixaErro : styles.caixaSucesso]}>
-                  <Text style={[styles.textoMensagem, tipoAviso === 'erro' ? styles.textoErro : styles.textoSucesso]}>{aviso}</Text>
-                </View>
-              ) : null}
-
-              <TouchableOpacity style={styles.btnConfirmar} onPress={handleSalvarEdicao}>
-                <Text style={styles.txtConfirmar}>Salvar Alterações</Text>
-              </TouchableOpacity>
-              <View style={{height: 20}} />
-            </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      )}
 
       {/* MODAL DE EXCLUSÃO */}
       <Modal animationType="fade" transparent={true} visible={modalExclusaoVisivel} onRequestClose={() => setModalExclusaoVisivel(false)}>
@@ -233,8 +217,8 @@ const styles = StyleSheet.create({
   btnAcao: { padding: 4 },
   txtEditar: { color: '#06B6D4', fontWeight: 'bold', fontSize: 12, textTransform: 'uppercase' },
   txtExcluir: { color: '#EF4444', fontWeight: 'bold', fontSize: 12, textTransform: 'uppercase' },
-  modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.8)', justifyContent: 'flex-end' },
-  modalContentEdicao: { backgroundColor: '#18181B', width: '100%', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 32, borderWidth: 1, borderColor: '#27272A', maxHeight: '90%' },
+  modalOverlayBottom: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0, 0, 0, 0.9)', zIndex: 1000, justifyContent: 'flex-end' },
+  modalContentEdicao: { backgroundColor: '#18181B', width: '100%', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 32, borderWidth: 1, borderColor: '#27272A', maxHeight: '90%' }, 
   modalOverlayCenter: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.8)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalContentAlerta: { backgroundColor: '#18181B', width: '100%', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: '#3F3F46' },
   tituloAlerta: { fontSize: 20, fontWeight: 'bold', color: '#FAFAFA', marginBottom: 12 },

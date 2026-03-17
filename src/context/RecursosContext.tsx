@@ -1,5 +1,6 @@
-import React, { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react';
-import { useAudioPlayer } from 'expo-audio';
+import React, { createContext, useState, useContext, useCallback } from 'react';
+import { Platform } from 'react-native';
+import { Audio } from 'expo-av';
 
 export interface Reserva {
   id: string;
@@ -25,6 +26,7 @@ interface RecursosContextData {
   reservarRecurso: (id: number, matricula: string, inicio: number, fim: number) => void;
   notificacao: string | null;
   fecharNotificacao: () => void;
+  finalizarReservaAutomatica: (recursoId: number, reservaId: string, tipo: string, nome: string) => void;
 }
 
 const RecursosContext = createContext<RecursosContextData>({} as RecursosContextData);
@@ -33,45 +35,32 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
   const [recursos, setRecursos] = useState<Recurso[]>([]);
   const [notificacao, setNotificacao] = useState<string | null>(null);
 
-  const audioPlayer = useAudioPlayer('https://www.myinstants.com/media/sounds/ding-sound-effect.mp3');
+  // Áudio Híbrido: API Nativa no Web (sem warnings) e expo-av no Mobile
+  const tocarAlerta = async () => {
+    if (Platform.OS === 'web') {
+      try {
+        const audio = new window.Audio('https://www.myinstants.com/media/sounds/ding-sound-effect.mp3');
+        audio.play();
+      } catch (e) { console.log('Áudio web bloqueado pelo navegador.'); }
+    } else {
+      try {
+        const { sound } = await Audio.Sound.createAsync({ uri: 'https://www.myinstants.com/media/sounds/ding-sound-effect.mp3' });
+        await sound.playAsync();
+      } catch (e) { console.log('Erro no áudio mobile.', e); }
+    }
+  };
 
-  // HEARTBEAT
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const tempoAtual = Date.now();
-      let houveAlteracao = false;
-      let msgNotificacao = "";
+  // Esta função é chamada pelo cronômetro da tela quando ele zera
+  const finalizarReservaAutomatica = useCallback((recursoId: number, reservaId: string, tipo: string, nome: string) => {
+    setRecursos(prev => prev.map(r => {
+      if (r.id !== recursoId) return r;
+      return { ...r, reservas: r.reservas.filter(res => res.id !== reservaId) };
+    }));
+    tocarAlerta();
+    setNotificacao(`${tipo}, ${nome} tempo encerrado.`);
+    setTimeout(() => setNotificacao(null), 6000);
+  }, []);
 
-      setRecursos(prevRecursos => {
-        const novosRecursos = prevRecursos.map(r => {
-          const reservasAtivas = r.reservas.filter(res => {
-            if (res.fimTimestamp <= tempoAtual) {
-              houveAlteracao = true;
-              msgNotificacao = `${r.tipo}, ${r.nome} tempo encerrado.`;
-              return false; 
-            }
-            return true;
-          });
-          return reservasAtivas.length !== r.reservas.length ? { ...r, reservas: reservasAtivas } : r;
-        });
-
-        if (houveAlteracao) {
-          if (audioPlayer) {
-            audioPlayer.seekTo(0);
-            audioPlayer.play();
-          }
-          setNotificacao(msgNotificacao);
-          setTimeout(() => setNotificacao(null), 5000);
-          return novosRecursos;
-        }
-        return prevRecursos;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [audioPlayer]);
-
-  // Envolvendo funções em useCallback para estabilizar a memória
   const adicionarRecurso = useCallback((recurso: Omit<Recurso, 'id' | 'reservas'>) => {
     setRecursos((prev) => [...prev, { ...recurso, id: Date.now(), reservas: [] }]);
   }, []);
@@ -87,9 +76,10 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
   const reservarRecurso = useCallback((id: number, matricula: string, inicio: number, fim: number) => {
     setRecursos((prev) => prev.map(recurso => {
       if (recurso.id !== id) return recurso;
-      const conflito = recurso.reservas.some(res => (inicio <= res.fimTimestamp && fim >= res.inicioTimestamp));
+
+      const conflito = recurso.reservas.some(res => (inicio < res.fimTimestamp && fim > res.inicioTimestamp));
       if (conflito) throw new Error("O horário se choca com uma reserva existente.");
-      
+
       const novaReserva: Reserva = { id: Math.random().toString(36).substring(7), matricula, inicioTimestamp: inicio, fimTimestamp: fim };
       return { ...recurso, reservas: [...recurso.reservas, novaReserva] };
     }));
@@ -97,13 +87,8 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
 
   const fecharNotificacao = useCallback(() => setNotificacao(null), []);
 
-  // BLINDAGEM SUPREMA: Impede a tela de "piscar" e roubar o teclado
-  const contextValue = useMemo(() => ({
-    recursos, adicionarRecurso, atualizarRecurso, excluirRecurso, reservarRecurso, notificacao, fecharNotificacao
-  }), [recursos, notificacao, adicionarRecurso, atualizarRecurso, excluirRecurso, reservarRecurso, fecharNotificacao]);
-
   return (
-    <RecursosContext.Provider value={contextValue}>
+    <RecursosContext.Provider value={{ recursos, adicionarRecurso, atualizarRecurso, excluirRecurso, reservarRecurso, notificacao, fecharNotificacao, finalizarReservaAutomatica }}>
       {children}
     </RecursosContext.Provider>
   );
