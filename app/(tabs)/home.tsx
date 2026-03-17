@@ -65,17 +65,17 @@ const FormularioReserva = ({ recurso, dias, onClose, onSucesso }: { recurso: Rec
   const handleReservar = () => {
     Keyboard.dismiss(); setAviso(''); setTipoAviso('');
     if (matricula.length < 4) { setTipoAviso('erro'); setAviso('Matrícula inválida.'); return; }
-    if (!hIni || !mIni || !hFim || !mFim) { setTipoAviso('erro'); setAviso('QA: Preencha o relógio.'); return; }
+    if (!hIni || !mIni || !hFim || !mFim) { setTipoAviso('erro'); setAviso('Preencha o relógio.'); return; }
 
     const inicio = new Date(dataIni.getFullYear(), dataIni.getMonth(), dataIni.getDate(), parseInt(hIni), parseInt(mIni), 0).getTime();
     const fim = new Date(dataFim.getFullYear(), dataFim.getMonth(), dataFim.getDate(), parseInt(hFim), parseInt(mFim), 0).getTime();
 
-    if (inicio < Date.now()) { setTipoAviso('erro'); setAviso('QA: Horário no passado.'); return; }
-    if (fim <= inicio) { setTipoAviso('erro'); setAviso('QA: Término deve ser superior ao início.'); return; }
+    if (inicio < Date.now()) { setTipoAviso('erro'); setAviso('Horário no passado.'); return; }
+    if (fim <= inicio) { setTipoAviso('erro'); setAviso('Término deve ser superior ao início.'); return; }
 
     const duracaoH = (fim - inicio) / 3600000;
     if (duracaoH < recurso.minHoras || duracaoH > recurso.maxHoras) {
-      setTipoAviso('erro'); setAviso(`QA: Permitido ${formatarDuracaoVisual(recurso.minHoras)} a ${formatarDuracaoVisual(recurso.maxHoras)}.`); return;
+      setTipoAviso('erro'); setAviso(`Permitido ${formatarDuracaoVisual(recurso.minHoras)} a ${formatarDuracaoVisual(recurso.maxHoras)}.`); return;
     }
 
     try {
