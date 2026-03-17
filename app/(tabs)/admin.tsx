@@ -39,7 +39,7 @@ export default function AdminScreen() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+    
       <ScrollView style={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View><Text style={styles.saudacao}>Painel Admin</Text><Text style={styles.subSaudacao}>Cadastro de Infraestrutura</Text></View>
@@ -81,7 +81,7 @@ export default function AdminScreen() {
         </View>
         <View style={{height: 40}} />
       </ScrollView>
-    </TouchableWithoutFeedback>
+    
   );
 }
 
