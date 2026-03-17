@@ -28,7 +28,7 @@ export default function LoginScreen() {
     // 1. Validação de campos vazios
     if (!matricula.trim() || !senha.trim()) {
       setTipoMensagem('erro');
-      setMensagem('Matrícula e senha são obrigatórias.');
+      setMensagem('QA Block: Matrícula e senha são obrigatórias.');
       return;
     }
 
@@ -55,7 +55,7 @@ export default function LoginScreen() {
       return;
     }
 
-    // Se chegou aqui, não é nem admin nem usuário válido
+    // 3. QA Block: Se chegou aqui, não é nem admin nem usuário válido
     setTipoMensagem('erro');
     setMensagem('Credenciais incorretas. Acesso negado ao sistema.');
   };

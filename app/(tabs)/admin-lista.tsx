@@ -64,20 +64,20 @@ export default function AdminListaScreen() {
     Keyboard.dismiss();
     setAviso('');
 
-    if (!nome.trim()) { setTipoAviso('erro'); setAviso('Nome obrigatório.'); return; }
+    if (!nome.trim()) { setTipoAviso('erro'); setAviso('QA Block: Nome obrigatório.'); return; }
 
     const nomeJaExiste = recursos.some((r: Recurso) => r.nome.toLowerCase() === nome.toLowerCase() && r.id !== idEditando);
-    if (nomeJaExiste) { setTipoAviso('erro'); setAviso('Recurso com este nome já existe.'); return; }
+    if (nomeJaExiste) { setTipoAviso('erro'); setAviso('QA Block: Recurso com este nome já existe.'); return; }
 
     if (!minH || !minM || !maxH || !maxM) {
-      setTipoAviso('erro'); setAviso('Preencha todo o relógio.'); return;
+      setTipoAviso('erro'); setAviso('QA Block: Preencha todo o relógio.'); return;
     }
 
     const minDecimal = parseInt(minH) + (parseInt(minM) / 60);
     const maxDecimal = parseInt(maxH) + (parseInt(maxM) / 60);
 
-    if (minDecimal <= 0 || maxDecimal <= 0) { setTipoAviso('erro'); setAviso('O tempo não pode ser zero.'); return; }
-    if (minDecimal > maxDecimal) { setTipoAviso('erro'); setAviso('Mínimo maior que o máximo.'); return; }
+    if (minDecimal <= 0 || maxDecimal <= 0) { setTipoAviso('erro'); setAviso('QA Block: O tempo não pode ser zero.'); return; }
+    if (minDecimal > maxDecimal) { setTipoAviso('erro'); setAviso('QA Block: Mínimo maior que o máximo.'); return; }
 
     if (idEditando !== null) {
       atualizarRecurso({ id: idEditando, nome, tipo, minHoras: minDecimal, maxHoras: maxDecimal });
@@ -143,45 +143,61 @@ export default function AdminListaScreen() {
       </ScrollView>
 
       {/* MODAL DE EDIÇÃO DIGITAL */}
-        {modalVisivel && (
-        <View style={styles.modalOverlayBottom}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', maxHeight: '90%' }}>
-            <View style={styles.modalContentEdicao}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Editar Recurso</Text>
-                <TouchableOpacity onPress={() => setModalVisivel(false)} style={styles.btnFecharModal}><Text style={styles.txtFecharModal}>X</Text></TouchableOpacity>
+      <Modal animationType="slide" transparent={true} visible={modalVisivel} onRequestClose={() => setModalVisivel(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlayBottom}>
+          <View style={styles.modalContentEdicao}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Editar Recurso</Text>
+              <TouchableOpacity onPress={() => setModalVisivel(false)} style={styles.btnFecharModal}>
+                <Text style={styles.txtFecharModal}>X</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <Text style={styles.label}>Nome</Text>
+              <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholderTextColor="#52525B" />
+
+              <Text style={styles.label}>Categoria</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollChips} keyboardShouldPersistTaps="handled">
+                {categorias.map(cat => (
+                  <TouchableOpacity key={cat} style={[styles.chip, tipo === cat && styles.chipAtivo]} onPress={() => setTipo(cat)}>
+                    <Text style={[styles.chipTexto, tipo === cat && styles.chipTextoAtivo]}>{cat}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <View style={styles.blocoTempo}>
+                <Text style={styles.labelTempo}>TEMPO MÍNIMO (HH:MM)</Text>
+                <View style={styles.relogioDigitalContainer}>
+                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={minH} onChangeText={(v) => validarEntradaTempo(v, 48, setMinH)} />
+                  <Text style={styles.separadorRelogio}>:</Text>
+                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={minM} onChangeText={(v) => validarEntradaTempo(v, 59, setMinM)} />
+                </View>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                <Text style={styles.label}>Nome</Text>
-                <TextInput style={styles.input} value={nome} onChangeText={setNome} placeholderTextColor="#52525B" />
-
-                <View style={styles.blocoTempo}>
-                  <Text style={styles.labelTempo}>TEMPO MÍNIMO (HH:MM)</Text>
-                  <View style={styles.relogioDigitalContainer}>
-                    <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={minH} onChangeText={(v) => validarEntradaTempo(v, 48, setMinH)} />
-                    <Text style={styles.separadorRelogio}>:</Text>
-                    <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={minM} onChangeText={(v) => validarEntradaTempo(v, 59, setMinM)} />
-                  </View>
+              <View style={styles.blocoTempo}>
+                <Text style={styles.labelTempo}>TEMPO MÁXIMO (HH:MM)</Text>
+                <View style={styles.relogioDigitalContainer}>
+                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={maxH} onChangeText={(v) => validarEntradaTempo(v, 48, setMaxH)} />
+                  <Text style={styles.separadorRelogio}>:</Text>
+                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={maxM} onChangeText={(v) => validarEntradaTempo(v, 59, setMaxM)} />
                 </View>
+              </View>
 
-                <View style={styles.blocoTempo}>
-                  <Text style={styles.labelTempo}>TEMPO MÁXIMO (HH:MM)</Text>
-                  <View style={styles.relogioDigitalContainer}>
-                    <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={maxH} onChangeText={(v) => validarEntradaTempo(v, 48, setMaxH)} />
-                    <Text style={styles.separadorRelogio}>:</Text>
-                    <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={maxM} onChangeText={(v) => validarEntradaTempo(v, 59, setMaxM)} />
-                  </View>
+              {aviso ? (
+                <View style={[styles.caixaMensagem, tipoAviso === 'erro' ? styles.caixaErro : styles.caixaSucesso]}>
+                  <Text style={[styles.textoMensagem, tipoAviso === 'erro' ? styles.textoErro : styles.textoSucesso]}>{aviso}</Text>
                 </View>
+              ) : null}
 
-                {aviso ? <View style={[styles.caixaMensagem, tipoAviso === 'erro' ? styles.caixaErro : styles.caixaSucesso]}><Text style={[styles.textoMensagem, tipoAviso === 'erro' ? styles.textoErro : styles.textoSucesso]}>{aviso}</Text></View> : null}
-                <TouchableOpacity style={styles.btnConfirmar} onPress={handleSalvarEdicao}><Text style={styles.txtConfirmar}>Salvar Alterações</Text></TouchableOpacity>
-                <View style={{height: 20}} />
-              </ScrollView>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      )}
+              <TouchableOpacity style={styles.btnConfirmar} onPress={handleSalvarEdicao}>
+                <Text style={styles.txtConfirmar}>Salvar Alterações</Text>
+              </TouchableOpacity>
+              <View style={{height: 20}} />
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* MODAL DE EXCLUSÃO */}
       <Modal animationType="fade" transparent={true} visible={modalExclusaoVisivel} onRequestClose={() => setModalExclusaoVisivel(false)}>
@@ -217,8 +233,8 @@ const styles = StyleSheet.create({
   btnAcao: { padding: 4 },
   txtEditar: { color: '#06B6D4', fontWeight: 'bold', fontSize: 12, textTransform: 'uppercase' },
   txtExcluir: { color: '#EF4444', fontWeight: 'bold', fontSize: 12, textTransform: 'uppercase' },
-  modalOverlayBottom: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0, 0, 0, 0.9)', zIndex: 1000, justifyContent: 'flex-end' },
-  modalContentEdicao: { backgroundColor: '#18181B', width: '100%', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 32, borderWidth: 1, borderColor: '#27272A', maxHeight: '90%' }, 
+  modalOverlayBottom: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.8)', justifyContent: 'flex-end' },
+  modalContentEdicao: { backgroundColor: '#18181B', width: '100%', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 32, borderWidth: 1, borderColor: '#27272A', maxHeight: '90%' },
   modalOverlayCenter: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.8)', justifyContent: 'center', alignItems: 'center', padding: 24 },
   modalContentAlerta: { backgroundColor: '#18181B', width: '100%', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: '#3F3F46' },
   tituloAlerta: { fontSize: 20, fontWeight: 'bold', color: '#FAFAFA', marginBottom: 12 },

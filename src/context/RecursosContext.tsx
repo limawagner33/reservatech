@@ -1,6 +1,6 @@
-import React, { createContext, useState, useContext, useCallback } from 'react';
-import { Platform } from 'react-native';
-import { Audio } from 'expo-av';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+// 1. Nova biblioteca oficial da Expo para Áudio (Livre de Warnings)
+import { useAudioPlayer } from 'expo-audio';
 
 export interface Reserva {
   id: string;
@@ -26,7 +26,6 @@ interface RecursosContextData {
   reservarRecurso: (id: number, matricula: string, inicio: number, fim: number) => void;
   notificacao: string | null;
   fecharNotificacao: () => void;
-  finalizarReservaAutomatica: (recursoId: number, reservaId: string, tipo: string, nome: string) => void;
 }
 
 const RecursosContext = createContext<RecursosContextData>({} as RecursosContextData);
@@ -35,60 +34,87 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
   const [recursos, setRecursos] = useState<Recurso[]>([]);
   const [notificacao, setNotificacao] = useState<string | null>(null);
 
-  // Áudio Híbrido: API Nativa no Web (sem warnings) e expo-av no Mobile
-  const tocarAlerta = async () => {
-    if (Platform.OS === 'web') {
-      try {
-        const audio = new window.Audio('https://www.myinstants.com/media/sounds/ding-sound-effect.mp3');
-        audio.play();
-      } catch (e) { console.log('Áudio web bloqueado pelo navegador.'); }
-    } else {
-      try {
-        const { sound } = await Audio.Sound.createAsync({ uri: 'https://www.myinstants.com/media/sounds/ding-sound-effect.mp3' });
-        await sound.playAsync();
-      } catch (e) { console.log('Erro no áudio mobile.', e); }
+  // 2. Instanciando o Player em memória (Muito mais rápido e robusto)
+  const audioPlayer = useAudioPlayer('https://www.myinstants.com/media/sounds/ding-sound-effect.mp3');
+
+  function tocarAlerta() {
+    try {
+      if (audioPlayer) {
+        audioPlayer.seekTo(0); // Garante que o som sempre toca do início
+        audioPlayer.play();
+      }
+    } catch (error) {
+      console.log('QA: Som não suportado no emulador sem foco.', error);
     }
+  }
+
+  const fecharNotificacao = () => setNotificacao(null);
+
+  // HEARTBEAT CORPORATIVO COM NOTIFICAÇÃO IN-APP
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const tempoAtual = Date.now();
+      let houveAlteracao = false;
+      let msgNotificacao = "";
+
+      setRecursos(prevRecursos => {
+        const novosRecursos = prevRecursos.map(r => {
+          const reservasAtivas = r.reservas.filter(res => {
+            if (res.fimTimestamp <= tempoAtual) {
+              houveAlteracao = true;
+              // String exata exigida pela regra de negócio
+              msgNotificacao = `${r.tipo}, ${r.nome} tempo encerrado.`;
+              return false; 
+            }
+            return true;
+          });
+          return reservasAtivas.length !== r.reservas.length ? { ...r, reservas: reservasAtivas } : r;
+        });
+
+        if (houveAlteracao) {
+          tocarAlerta();
+          setNotificacao(msgNotificacao);
+          // Fecha o pop-up corporativo automaticamente após 5 segundos
+          setTimeout(() => setNotificacao(null), 5000);
+          return novosRecursos;
+        }
+        return prevRecursos;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [audioPlayer]); // O hook do áudio garante a reatividade
+
+  const adicionarRecurso = (recurso: Omit<Recurso, 'id' | 'reservas'>) => {
+    setRecursos((prev) => [...prev, { ...recurso, id: Date.now(), reservas: [] }]);
   };
 
-  // Esta função é chamada pelo cronômetro da tela quando ele zera
-  const finalizarReservaAutomatica = useCallback((recursoId: number, reservaId: string, tipo: string, nome: string) => {
-    setRecursos(prev => prev.map(r => {
-      if (r.id !== recursoId) return r;
-      return { ...r, reservas: r.reservas.filter(res => res.id !== reservaId) };
-    }));
-    tocarAlerta();
-    setNotificacao(`${tipo}, ${nome} tempo encerrado.`);
-    setTimeout(() => setNotificacao(null), 6000);
-  }, []);
-
-  const adicionarRecurso = useCallback((recurso: Omit<Recurso, 'id' | 'reservas'>) => {
-    setRecursos((prev) => [...prev, { ...recurso, id: Date.now(), reservas: [] }]);
-  }, []);
-
-  const atualizarRecurso = useCallback((recursoAtualizado: Omit<Recurso, 'reservas'>) => {
+  const atualizarRecurso = (recursoAtualizado: Omit<Recurso, 'reservas'>) => {
     setRecursos((prev) => prev.map(r => r.id === recursoAtualizado.id ? { ...recursoAtualizado, reservas: r.reservas } : r));
-  }, []);
+  };
 
-  const excluirRecurso = useCallback((id: number) => {
+  const excluirRecurso = (id: number) => {
     setRecursos((prev) => prev.filter(r => r.id !== id));
-  }, []);
+  };
 
-  const reservarRecurso = useCallback((id: number, matricula: string, inicio: number, fim: number) => {
+  const reservarRecurso = (id: number, matricula: string, inicio: number, fim: number) => {
     setRecursos((prev) => prev.map(recurso => {
       if (recurso.id !== id) return recurso;
 
-      const conflito = recurso.reservas.some(res => (inicio < res.fimTimestamp && fim > res.inicioTimestamp));
-      if (conflito) throw new Error("O horário se choca com uma reserva existente.");
+      // QA BLOCK: Interseção Rigorosa (Impede pular em cima ou agendar no mesmo minuto exato)
+      const conflito = recurso.reservas.some(res => 
+        (inicio <= res.fimTimestamp && fim >= res.inicioTimestamp)
+      );
+
+      if (conflito) throw new Error("QA Block: O horário se choca com uma reserva existente.");
 
       const novaReserva: Reserva = { id: Math.random().toString(36).substring(7), matricula, inicioTimestamp: inicio, fimTimestamp: fim };
       return { ...recurso, reservas: [...recurso.reservas, novaReserva] };
     }));
-  }, []);
-
-  const fecharNotificacao = useCallback(() => setNotificacao(null), []);
+  };
 
   return (
-    <RecursosContext.Provider value={{ recursos, adicionarRecurso, atualizarRecurso, excluirRecurso, reservarRecurso, notificacao, fecharNotificacao, finalizarReservaAutomatica }}>
+    <RecursosContext.Provider value={{ recursos, adicionarRecurso, atualizarRecurso, excluirRecurso, reservarRecurso, notificacao, fecharNotificacao }}>
       {children}
     </RecursosContext.Provider>
   );
