@@ -41,26 +41,26 @@ export default function AdminScreen() {
     setAviso(''); setTipoAviso('');
 
     if (!nome.trim()) {
-      setTipoAviso('erro'); setAviso('QA Block: O Nome do recurso é obrigatório.'); return;
+      setTipoAviso('erro'); setAviso('O Nome do recurso é obrigatório.'); return;
     }
 
     const nomeJaExiste = recursos.some((r: Recurso) => r.nome.toLowerCase() === nome.toLowerCase());
     if (nomeJaExiste) {
-      setTipoAviso('erro'); setAviso('QA Block: Já existe um recurso com este nome.'); return;
+      setTipoAviso('erro'); setAviso('Já existe um recurso com este nome.'); return;
     }
 
     if (!minH || !minM || !maxH || !maxM) {
-      setTipoAviso('erro'); setAviso('QA Block: Preencha todos os campos do relógio digital.'); return;
+      setTipoAviso('erro'); setAviso('Preencha todos os campos do relógio digital.'); return;
     }
 
     const minDecimal = parseInt(minH) + (parseInt(minM) / 60);
     const maxDecimal = parseInt(maxH) + (parseInt(maxM) / 60);
 
     if (minDecimal <= 0 || maxDecimal <= 0) {
-      setTipoAviso('erro'); setAviso('QA Block: O tempo de reserva não pode ser zero.'); return;
+      setTipoAviso('erro'); setAviso('O tempo de reserva não pode ser zero.'); return;
     }
     if (minDecimal > maxDecimal) {
-      setTipoAviso('erro'); setAviso('QA Block: O tempo mínimo não pode ser maior que o máximo.'); return;
+      setTipoAviso('erro'); setAviso('O tempo mínimo não pode ser maior que o máximo.'); return;
     }
 
     adicionarRecurso({ nome, tipo, minHoras: minDecimal, maxHoras: maxDecimal });
