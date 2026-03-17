@@ -64,20 +64,20 @@ export default function AdminListaScreen() {
     Keyboard.dismiss();
     setAviso('');
 
-    if (!nome.trim()) { setTipoAviso('erro'); setAviso('QA Block: Nome obrigatório.'); return; }
+    if (!nome.trim()) { setTipoAviso('erro'); setAviso('Nome obrigatório.'); return; }
 
     const nomeJaExiste = recursos.some((r: Recurso) => r.nome.toLowerCase() === nome.toLowerCase() && r.id !== idEditando);
-    if (nomeJaExiste) { setTipoAviso('erro'); setAviso('QA Block: Recurso com este nome já existe.'); return; }
+    if (nomeJaExiste) { setTipoAviso('erro'); setAviso('Recurso com este nome já existe.'); return; }
 
     if (!minH || !minM || !maxH || !maxM) {
-      setTipoAviso('erro'); setAviso('QA Block: Preencha todo o relógio.'); return;
+      setTipoAviso('erro'); setAviso('Preencha todo o relógio.'); return;
     }
 
     const minDecimal = parseInt(minH) + (parseInt(minM) / 60);
     const maxDecimal = parseInt(maxH) + (parseInt(maxM) / 60);
 
-    if (minDecimal <= 0 || maxDecimal <= 0) { setTipoAviso('erro'); setAviso('QA Block: O tempo não pode ser zero.'); return; }
-    if (minDecimal > maxDecimal) { setTipoAviso('erro'); setAviso('QA Block: Mínimo maior que o máximo.'); return; }
+    if (minDecimal <= 0 || maxDecimal <= 0) { setTipoAviso('erro'); setAviso('O tempo não pode ser zero.'); return; }
+    if (minDecimal > maxDecimal) { setTipoAviso('erro'); setAviso('Mínimo maior que o máximo.'); return; }
 
     if (idEditando !== null) {
       atualizarRecurso({ id: idEditando, nome, tipo, minHoras: minDecimal, maxHoras: maxDecimal });

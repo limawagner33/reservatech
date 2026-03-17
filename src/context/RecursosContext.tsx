@@ -44,7 +44,7 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
         audioPlayer.play();
       }
     } catch (error) {
-      console.log('QA: Som não suportado no emulador sem foco.', error);
+      console.log('Som não suportado no emulador sem foco.', error);
     }
   }
 
@@ -104,7 +104,7 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
       const conflito = recursoAlvo.reservas.some(res => (inicio <= res.fimTimestamp && fim >= res.inicioTimestamp));
       if (conflito) {
         // Agora o throw new Error é disparado no lugar certo, e o try/catch vai pegar!
-        throw new Error("QA Block: O horário se choca com uma reserva existente.");
+        throw new Error("O horário se choca com uma reserva existente.");
       }
     }
 

@@ -103,10 +103,10 @@ export default function HomeScreen() {
 
     if (!recursoSelecionado) return;
     if (!matricula.trim() || matricula.length < 4) {
-      setTipoAviso('erro'); setAviso('QA Block: Matrícula inválida. Mínimo 4 dígitos.'); return;
+      setTipoAviso('erro'); setAviso('Matrícula inválida. Mínimo 4 dígitos.'); return;
     }
     if (!hIni || !mIni || !hFim || !mFim) {
-      setTipoAviso('erro'); setAviso('QA Block: Preencha todas as horas e minutos.'); return;
+      setTipoAviso('erro'); setAviso('Preencha todas as horas e minutos.'); return;
     }
 
     const inicioTimestamp = new Date(dataInicioSelecionada.getFullYear(), dataInicioSelecionada.getMonth(), dataInicioSelecionada.getDate(), parseInt(hIni), parseInt(mIni), 0).getTime();
@@ -114,16 +114,16 @@ export default function HomeScreen() {
     const agora = Date.now();
 
     if (inicioTimestamp < agora) {
-      setTipoAviso('erro'); setAviso('QA Block: Não é possível agendar no passado.'); return;
+      setTipoAviso('erro'); setAviso('Não é possível agendar no passado.'); return;
     }
     if (fimTimestamp <= inicioTimestamp) {
-      setTipoAviso('erro'); setAviso('QA Block: O término deve ser posterior ao início.'); return;
+      setTipoAviso('erro'); setAviso(' O término deve ser posterior ao início.'); return;
     }
 
     const duracaoH = (fimTimestamp - inicioTimestamp) / (1000 * 60 * 60);
     if (duracaoH < recursoSelecionado.minHoras || duracaoH > recursoSelecionado.maxHoras) {
       setTipoAviso('erro'); 
-      setAviso(`QA Block: Limite exigido: ${formatarDuracaoVisual(recursoSelecionado.minHoras)} a ${formatarDuracaoVisual(recursoSelecionado.maxHoras)}.`);
+      setAviso(`Limite exigido: ${formatarDuracaoVisual(recursoSelecionado.minHoras)} a ${formatarDuracaoVisual(recursoSelecionado.maxHoras)}.`);
       return;
     }
 
