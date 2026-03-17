@@ -101,7 +101,7 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
     // 1. Trazemos a validação para FORA do setRecursos!
     const recursoAlvo = recursos.find(r => r.id === id);
     if (recursoAlvo) {
-      const conflito = recursoAlvo.reservas.some(res => (inicio < res.fimTimestamp && fim > res.inicioTimestamp));
+      const conflito = recursoAlvo.reservas.some(res => (inicio <= res.fimTimestamp && fim >= res.inicioTimestamp));
       if (conflito) {
         // Agora o throw new Error é disparado no lugar certo, e o try/catch vai pegar!
         throw new Error("QA Block: O horário se choca com uma reserva existente.");
@@ -115,7 +115,7 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
       const novaReserva: Reserva = { id: Math.random().toString(36).substring(7), matricula, inicioTimestamp: inicio, fimTimestamp: fim };
       return { ...recurso, reservas: [...recurso.reservas, novaReserva] };
     }));
-  }, [recursos]); // <-- E adicionamos 'recursos' aqui na dependência para ele ler os dados atuais.
+  }, [recursos]); // <-- E adiciona 'recursos' aqui na dependência para ele ler os dados atuais.
 
   return (
     <RecursosContext.Provider value={{ recursos, adicionarRecurso, atualizarRecurso, excluirRecurso, reservarRecurso, notificacao, fecharNotificacao }}>
