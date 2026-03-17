@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react';
 // 1. Nova biblioteca oficial da Expo para Áudio (Livre de Warnings)
 import { useAudioPlayer } from 'expo-audio';
 
@@ -97,21 +97,25 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
     setRecursos((prev) => prev.filter(r => r.id !== id));
   };
 
-  const reservarRecurso = (id: number, matricula: string, inicio: number, fim: number) => {
+  const reservarRecurso = useCallback((id: number, matricula: string, inicio: number, fim: number) => {
+    // 1. Trazemos a validação para FORA do setRecursos!
+    const recursoAlvo = recursos.find(r => r.id === id);
+    if (recursoAlvo) {
+      const conflito = recursoAlvo.reservas.some(res => (inicio < res.fimTimestamp && fim > res.inicioTimestamp));
+      if (conflito) {
+        // Agora o throw new Error é disparado no lugar certo, e o try/catch vai pegar!
+        throw new Error("QA Block: O horário se choca com uma reserva existente.");
+      }
+    }
+
+    // 2. Se passar na validação, aí sim atualizamos o estado do React
     setRecursos((prev) => prev.map(recurso => {
       if (recurso.id !== id) return recurso;
-
-      // QA BLOCK: Interseção Rigorosa (Impede pular em cima ou agendar no mesmo minuto exato)
-      const conflito = recurso.reservas.some(res => 
-        (inicio <= res.fimTimestamp && fim >= res.inicioTimestamp)
-      );
-
-      if (conflito) throw new Error("QA Block: O horário se choca com uma reserva existente.");
-
+      
       const novaReserva: Reserva = { id: Math.random().toString(36).substring(7), matricula, inicioTimestamp: inicio, fimTimestamp: fim };
       return { ...recurso, reservas: [...recurso.reservas, novaReserva] };
     }));
-  };
+  }, [recursos]); // <-- E adicionamos 'recursos' aqui na dependência para ele ler os dados atuais.
 
   return (
     <RecursosContext.Provider value={{ recursos, adicionarRecurso, atualizarRecurso, excluirRecurso, reservarRecurso, notificacao, fecharNotificacao }}>
