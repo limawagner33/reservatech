@@ -56,7 +56,7 @@ const gerarProximosDias = () => {
 export default function HomeScreen() {
   const router = useRouter();
   
-  // Conectamos a notificação e a função de fechar do Contexto
+  // Conecta a notificação e a função de fechar do Contexto
   const { recursos, reservarRecurso, notificacao, fecharNotificacao } = useRecursos();
   
   const [abaAtiva, setAbaAtiva] = useState<'CATALOGO' | 'AGENDADOS'>('CATALOGO');

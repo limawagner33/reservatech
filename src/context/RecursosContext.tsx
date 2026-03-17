@@ -98,7 +98,7 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
   };
 
   const reservarRecurso = useCallback((id: number, matricula: string, inicio: number, fim: number) => {
-    // 1. Trazemos a validação para FORA do setRecursos!
+    // 1. validação para FORA do setRecursos!
     const recursoAlvo = recursos.find(r => r.id === id);
     if (recursoAlvo) {
       const conflito = recursoAlvo.reservas.some(res => (inicio <= res.fimTimestamp && fim >= res.inicioTimestamp));
