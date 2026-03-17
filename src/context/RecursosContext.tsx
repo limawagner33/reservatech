@@ -1,5 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-// 1. Nova biblioteca oficial da Expo para Áudio (Livre de Warnings)
+import React, { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react';
 import { useAudioPlayer } from 'expo-audio';
 
 export interface Reserva {
@@ -34,23 +33,9 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
   const [recursos, setRecursos] = useState<Recurso[]>([]);
   const [notificacao, setNotificacao] = useState<string | null>(null);
 
-  // 2. Instanciando o Player em memória (Muito mais rápido e robusto)
   const audioPlayer = useAudioPlayer('https://www.myinstants.com/media/sounds/ding-sound-effect.mp3');
 
-  function tocarAlerta() {
-    try {
-      if (audioPlayer) {
-        audioPlayer.seekTo(0); // Garante que o som sempre toca do início
-        audioPlayer.play();
-      }
-    } catch (error) {
-      console.log('QA: Som não suportado no emulador sem foco.', error);
-    }
-  }
-
-  const fecharNotificacao = () => setNotificacao(null);
-
-  // HEARTBEAT CORPORATIVO COM NOTIFICAÇÃO IN-APP
+  // HEARTBEAT
   useEffect(() => {
     const interval = setInterval(() => {
       const tempoAtual = Date.now();
@@ -62,7 +47,6 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
           const reservasAtivas = r.reservas.filter(res => {
             if (res.fimTimestamp <= tempoAtual) {
               houveAlteracao = true;
-              // String exata exigida pela regra de negócio
               msgNotificacao = `${r.tipo}, ${r.nome} tempo encerrado.`;
               return false; 
             }
@@ -72,9 +56,11 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
         });
 
         if (houveAlteracao) {
-          tocarAlerta();
+          if (audioPlayer) {
+            audioPlayer.seekTo(0);
+            audioPlayer.play();
+          }
           setNotificacao(msgNotificacao);
-          // Fecha o pop-up corporativo automaticamente após 5 segundos
           setTimeout(() => setNotificacao(null), 5000);
           return novosRecursos;
         }
@@ -83,38 +69,41 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [audioPlayer]); // O hook do áudio garante a reatividade
+  }, [audioPlayer]);
 
-  const adicionarRecurso = (recurso: Omit<Recurso, 'id' | 'reservas'>) => {
+  // Envolvendo funções em useCallback para estabilizar a memória
+  const adicionarRecurso = useCallback((recurso: Omit<Recurso, 'id' | 'reservas'>) => {
     setRecursos((prev) => [...prev, { ...recurso, id: Date.now(), reservas: [] }]);
-  };
+  }, []);
 
-  const atualizarRecurso = (recursoAtualizado: Omit<Recurso, 'reservas'>) => {
+  const atualizarRecurso = useCallback((recursoAtualizado: Omit<Recurso, 'reservas'>) => {
     setRecursos((prev) => prev.map(r => r.id === recursoAtualizado.id ? { ...recursoAtualizado, reservas: r.reservas } : r));
-  };
+  }, []);
 
-  const excluirRecurso = (id: number) => {
+  const excluirRecurso = useCallback((id: number) => {
     setRecursos((prev) => prev.filter(r => r.id !== id));
-  };
+  }, []);
 
-  const reservarRecurso = (id: number, matricula: string, inicio: number, fim: number) => {
+  const reservarRecurso = useCallback((id: number, matricula: string, inicio: number, fim: number) => {
     setRecursos((prev) => prev.map(recurso => {
       if (recurso.id !== id) return recurso;
-
-      // QA BLOCK: Interseção Rigorosa (Impede pular em cima ou agendar no mesmo minuto exato)
-      const conflito = recurso.reservas.some(res => 
-        (inicio <= res.fimTimestamp && fim >= res.inicioTimestamp)
-      );
-
-      if (conflito) throw new Error("QA Block: O horário se choca com uma reserva existente.");
-
+      const conflito = recurso.reservas.some(res => (inicio <= res.fimTimestamp && fim >= res.inicioTimestamp));
+      if (conflito) throw new Error("O horário se choca com uma reserva existente.");
+      
       const novaReserva: Reserva = { id: Math.random().toString(36).substring(7), matricula, inicioTimestamp: inicio, fimTimestamp: fim };
       return { ...recurso, reservas: [...recurso.reservas, novaReserva] };
     }));
-  };
+  }, []);
+
+  const fecharNotificacao = useCallback(() => setNotificacao(null), []);
+
+  // BLINDAGEM SUPREMA: Impede a tela de "piscar" e roubar o teclado
+  const contextValue = useMemo(() => ({
+    recursos, adicionarRecurso, atualizarRecurso, excluirRecurso, reservarRecurso, notificacao, fecharNotificacao
+  }), [recursos, notificacao, adicionarRecurso, atualizarRecurso, excluirRecurso, reservarRecurso, fecharNotificacao]);
 
   return (
-    <RecursosContext.Provider value={{ recursos, adicionarRecurso, atualizarRecurso, excluirRecurso, reservarRecurso, notificacao, fecharNotificacao }}>
+    <RecursosContext.Provider value={contextValue}>
       {children}
     </RecursosContext.Provider>
   );

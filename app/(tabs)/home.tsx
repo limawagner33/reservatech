@@ -22,7 +22,7 @@ const formatarDuracaoVisual = (decimal: number) => {
   return `${h}h${m}m`;
 };
 
-// COMPONENTE ISOLADO (O timer roda APENAS aqui dentro, salvando o teclado!)
+// COMPONENTE TOTALMENTE ISOLADO
 const StatusReativo = ({ inicio, fim }: { inicio: number, fim: number }) => {
   const [statusTexto, setStatusTexto] = useState('');
   const [isRodando, setIsRodando] = useState(false);
@@ -52,9 +52,7 @@ const StatusReativo = ({ inicio, fim }: { inicio: number, fim: number }) => {
   }, [inicio, fim]);
 
   return (
-    <Text style={isRodando ? styles.txtCronometro : styles.txtFuturo}>
-      {statusTexto}
-    </Text>
+    <Text style={isRodando ? styles.txtCronometro : styles.txtFuturo}>{statusTexto}</Text>
   );
 };
 
@@ -98,10 +96,17 @@ export default function HomeScreen() {
     setModalVisivel(true);
   };
 
-  const validarEntradaTempo = (texto: string, maximo: number, setValor: (v: string) => void) => {
-    const valorNum = texto.replace(/[^0-9]/g, '');
-    if (valorNum === '') { setValor(''); return; }
-    if (parseInt(valorNum) <= maximo) setValor(valorNum);
+  // Validadores mais gentis para o Web (Não travam o React)
+  const lidarComH = (text: string, setFn: (v: string) => void) => {
+    let num = text.replace(/[^0-9]/g, '');
+    if (num !== '' && parseInt(num) > 23) num = '23';
+    setFn(num);
+  };
+
+  const lidarComM = (text: string, setFn: (v: string) => void) => {
+    let num = text.replace(/[^0-9]/g, '');
+    if (num !== '' && parseInt(num) > 59) num = '59';
+    setFn(num);
   };
 
   const handleReservar = () => {
@@ -233,7 +238,8 @@ export default function HomeScreen() {
       </ScrollView>
 
       <Modal animationType="slide" transparent={true} visible={modalVisivel} onRequestClose={() => setModalVisivel(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+        {/* Usando View ao invés de KeyboardAvoidingView para evitar bugs agressivos no Web */}
+        <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{recursoSelecionado?.nome}</Text>
@@ -254,9 +260,9 @@ export default function HomeScreen() {
                   ))}
                 </ScrollView>
                 <View style={styles.relogioDigitalContainer}>
-                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={hIni} onChangeText={(v) => validarEntradaTempo(v, 23, setHIni)} />
+                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={hIni} onChangeText={(v) => lidarComH(v, setHIni)} />
                   <Text style={styles.separadorRelogio}>:</Text>
-                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={mIni} onChangeText={(v) => validarEntradaTempo(v, 59, setMIni)} />
+                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={mIni} onChangeText={(v) => lidarComM(v, setMIni)} />
                 </View>
               </View>
 
@@ -270,13 +276,13 @@ export default function HomeScreen() {
                   ))}
                 </ScrollView>
                 <View style={styles.relogioDigitalContainer}>
-                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={hFim} onChangeText={(v) => validarEntradaTempo(v, 23, setHFim)} />
+                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={hFim} onChangeText={(v) => lidarComH(v, setHFim)} />
                   <Text style={styles.separadorRelogio}>:</Text>
-                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={mFim} onChangeText={(v) => validarEntradaTempo(v, 59, setMFim)} />
+                  <TextInput style={styles.inputRelogio} placeholder="00" placeholderTextColor="#52525B" keyboardType="numeric" maxLength={2} value={mFim} onChangeText={(v) => lidarComM(v, setMFim)} />
                 </View>
               </View>
 
-              <Text style={styles.infoLimite}>Permitido: {formatarDuracaoVisual(recursoSelecionado?.minHoras || 0)} min a {formatarDuracaoVisual(recursoSelecionado?.maxHoras || 0)} max</Text>
+              <Text style={styles.infoLimite}>Permitido: {formatarDuracaoVisual(recursoSelecionado?.minHoras || 0)} a {formatarDuracaoVisual(recursoSelecionado?.maxHoras || 0)}</Text>
 
               {aviso ? (
                 <View style={[styles.caixaMensagem, tipoAviso === 'erro' ? styles.caixaErro : styles.caixaSucesso]}>
@@ -290,7 +296,7 @@ export default function HomeScreen() {
               <View style={{height: 20}} />
             </ScrollView>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
     </View>
   );
