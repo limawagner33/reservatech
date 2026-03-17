@@ -22,25 +22,40 @@ const formatarDuracaoVisual = (decimal: number) => {
   return `${h}h${m}m`;
 };
 
-const CronometroLive = ({ tempoFim }: { tempoFim: number }) => {
-  const [tempoExibicao, setTempoExibicao] = useState('');
+// NOVO COMPONENTE: Isolado para não "piscar" a tela inteira e roubar o teclado
+const StatusReativo = ({ inicio, fim }: { inicio: number, fim: number }) => {
+  const [statusTexto, setStatusTexto] = useState('');
+  const [isRodando, setIsRodando] = useState(false);
 
   useEffect(() => {
-    const calcularTempo = () => {
-      const diferenca = tempoFim - Date.now();
-      if (diferenca <= 0) return '00h 00m 00s';
-      const h = Math.floor(diferenca / (1000 * 60 * 60));
-      const m = Math.floor((diferenca / (1000 * 60)) % 60);
-      const s = Math.floor((diferenca / 1000) % 60);
-      return `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
+    const atualizarStatus = () => {
+      const agora = Date.now();
+      if (agora < inicio) {
+        setStatusTexto('Aguardando...');
+        setIsRodando(false);
+      } else if (agora < fim) {
+        const diferenca = fim - agora;
+        const h = Math.floor(diferenca / (1000 * 60 * 60));
+        const m = Math.floor((diferenca / (1000 * 60)) % 60);
+        const s = Math.floor((diferenca / 1000) % 60);
+        setStatusTexto(`${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`);
+        setIsRodando(true);
+      } else {
+        setStatusTexto('Liberando...');
+        setIsRodando(false);
+      }
     };
 
-    setTempoExibicao(calcularTempo());
-    const intervalo = setInterval(() => setTempoExibicao(calcularTempo()), 1000);
+    atualizarStatus(); // Chama a primeira vez imediatamente
+    const intervalo = setInterval(atualizarStatus, 1000); // Roda apenas AQUI DENTRO
     return () => clearInterval(intervalo);
-  }, [tempoFim]);
+  }, [inicio, fim]);
 
-  return <Text style={styles.txtCronometro}>{tempoExibicao}</Text>;
+  return (
+    <Text style={isRodando ? styles.txtCronometro : styles.txtFuturo}>
+      {statusTexto}
+    </Text>
+  );
 };
 
 const gerarProximosDias = () => {
@@ -55,8 +70,6 @@ const gerarProximosDias = () => {
 
 export default function HomeScreen() {
   const router = useRouter();
-  
-  // Conectamos a notificação e a função de fechar do Contexto
   const { recursos, reservarRecurso, notificacao, fecharNotificacao } = useRecursos();
   
   const [abaAtiva, setAbaAtiva] = useState<'CATALOGO' | 'AGENDADOS'>('CATALOGO');
@@ -75,12 +88,8 @@ export default function HomeScreen() {
 
   const [aviso, setAviso] = useState('');
   const [tipoAviso, setTipoAviso] = useState<'erro' | 'sucesso' | ''>('');
-  
-  const [tempoUI, setTempoUI] = useState(Date.now());
-  useEffect(() => {
-    const timerUI = setInterval(() => setTempoUI(Date.now()), 1000);
-    return () => clearInterval(timerUI);
-  }, []);
+
+  // Removido o tempoUI daqui! O teclado agora está em paz.
 
   const abrirMinitela = (item: Recurso) => {
     setRecursoSelecionado(item);
@@ -141,7 +150,6 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       
-      {/* COMPONENTE TOAST DE NOTIFICAÇÃO DE SUCESSO FLUTUANTE */}
       {notificacao && (
         <View style={styles.toastContainer}>
           <Text style={styles.toastText}>{notificacao}</Text>
@@ -200,11 +208,8 @@ export default function HomeScreen() {
                     </View>
                     <View style={{alignItems: 'flex-end'}}>
                       <Text style={styles.txtEmUso}>STATUS</Text>
-                      {reserva.inicioTimestamp <= tempoUI ? (
-                        <CronometroLive tempoFim={reserva.fimTimestamp} />
-                      ) : (
-                        <Text style={styles.txtFuturo}>Aguardando...</Text>
-                      )}
+                      {/* Aqui chamamos o novo componente blindado */}
+                      <StatusReativo inicio={reserva.inicioTimestamp} fim={reserva.fimTimestamp} />
                     </View>
                   </View>
                   <View style={styles.ticketReserva}>
@@ -230,7 +235,6 @@ export default function HomeScreen() {
         )}
       </ScrollView>
 
-      {/* MODAL COM RELÓGIO DIGITAL (INPUT QUEBRADO) */}
       <Modal animationType="slide" transparent={true} visible={modalVisivel} onRequestClose={() => setModalVisivel(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -275,7 +279,7 @@ export default function HomeScreen() {
                 </View>
               </View>
 
-              <Text style={styles.infoLimite}>Permitido: {formatarDuracaoVisual(recursoSelecionado?.minHoras || 0)} min a {formatarDuracaoVisual(recursoSelecionado?.maxHoras || 0)} max</Text>
+              <Text style={styles.infoLimite}>Permitido: {formatarDuracaoVisual(recursoSelecionado?.minHoras || 0)} a {formatarDuracaoVisual(recursoSelecionado?.maxHoras || 0)}</Text>
 
               {aviso ? (
                 <View style={[styles.caixaMensagem, tipoAviso === 'erro' ? styles.caixaErro : styles.caixaSucesso]}>
@@ -297,12 +301,9 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#09090B', padding: 24 },
-  
-  // ESTILOS DA NOTIFICAÇÃO TOAST
   toastContainer: { position: 'absolute', top: 60, right: 20, backgroundColor: '#18181B', borderColor: '#06B6D4', borderWidth: 1, borderLeftWidth: 4, borderRadius: 8, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 9999, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5, maxWidth: '80%' },
   toastText: { color: '#FAFAFA', fontSize: 12, fontWeight: 'bold', marginRight: 16 },
   toastClose: { color: '#A1A1AA', fontWeight: 'bold', fontSize: 14 },
-
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 32 },
   saudacao: { fontSize: 20, fontWeight: 'bold', color: '#FAFAFA', letterSpacing: -0.5 },
   subSaudacao: { fontSize: 12, color: '#A1A1AA', marginTop: 4, textTransform: 'uppercase', letterSpacing: 1 },
