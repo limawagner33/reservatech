@@ -22,7 +22,7 @@ const formatarDuracaoVisual = (decimal: number) => {
   return `${h}h${m}m`;
 };
 
-// NOVO COMPONENTE: Isolado para não "piscar" a tela inteira e roubar o teclado
+// COMPONENTE ISOLADO (O timer roda APENAS aqui dentro, salvando o teclado!)
 const StatusReativo = ({ inicio, fim }: { inicio: number, fim: number }) => {
   const [statusTexto, setStatusTexto] = useState('');
   const [isRodando, setIsRodando] = useState(false);
@@ -46,8 +46,8 @@ const StatusReativo = ({ inicio, fim }: { inicio: number, fim: number }) => {
       }
     };
 
-    atualizarStatus(); // Chama a primeira vez imediatamente
-    const intervalo = setInterval(atualizarStatus, 1000); // Roda apenas AQUI DENTRO
+    atualizarStatus(); 
+    const intervalo = setInterval(atualizarStatus, 1000); 
     return () => clearInterval(intervalo);
   }, [inicio, fim]);
 
@@ -88,8 +88,6 @@ export default function HomeScreen() {
 
   const [aviso, setAviso] = useState('');
   const [tipoAviso, setTipoAviso] = useState<'erro' | 'sucesso' | ''>('');
-
-  // Removido o tempoUI daqui! O teclado agora está em paz.
 
   const abrirMinitela = (item: Recurso) => {
     setRecursoSelecionado(item);
@@ -208,7 +206,6 @@ export default function HomeScreen() {
                     </View>
                     <View style={{alignItems: 'flex-end'}}>
                       <Text style={styles.txtEmUso}>STATUS</Text>
-                      {/* Aqui chamamos o novo componente blindado */}
                       <StatusReativo inicio={reserva.inicioTimestamp} fim={reserva.fimTimestamp} />
                     </View>
                   </View>
@@ -249,7 +246,7 @@ export default function HomeScreen() {
 
               <View style={styles.blocoData}>
                 <Text style={styles.labelData}>INÍCIO DA RESERVA</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollDatas}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollDatas} keyboardShouldPersistTaps="handled">
                   {diasDisponiveis.map((dia, index) => (
                     <TouchableOpacity key={`d-ini-${index}`} style={[styles.chipData, dataInicioSelecionada.getDate() === dia.dataCompleta.getDate() && styles.chipDataAtivo]} onPress={() => setDataInicioSelecionada(dia.dataCompleta)}>
                       <Text style={[styles.txtChipData, dataInicioSelecionada.getDate() === dia.dataCompleta.getDate() && styles.txtChipDataAtivo]}>{dia.diaMes}</Text>
@@ -265,7 +262,7 @@ export default function HomeScreen() {
 
               <View style={styles.blocoData}>
                 <Text style={styles.labelData}>TÉRMINO DA RESERVA</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollDatas}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollDatas} keyboardShouldPersistTaps="handled">
                   {diasDisponiveis.map((dia, index) => (
                     <TouchableOpacity key={`d-fim-${index}`} style={[styles.chipData, dataFimSelecionada.getDate() === dia.dataCompleta.getDate() && styles.chipDataAtivo]} onPress={() => setDataFimSelecionada(dia.dataCompleta)}>
                       <Text style={[styles.txtChipData, dataFimSelecionada.getDate() === dia.dataCompleta.getDate() && styles.txtChipDataAtivo]}>{dia.diaMes}</Text>
@@ -279,7 +276,7 @@ export default function HomeScreen() {
                 </View>
               </View>
 
-              <Text style={styles.infoLimite}>Permitido: {formatarDuracaoVisual(recursoSelecionado?.minHoras || 0)} a {formatarDuracaoVisual(recursoSelecionado?.maxHoras || 0)}</Text>
+              <Text style={styles.infoLimite}>Permitido: {formatarDuracaoVisual(recursoSelecionado?.minHoras || 0)} min a {formatarDuracaoVisual(recursoSelecionado?.maxHoras || 0)} max</Text>
 
               {aviso ? (
                 <View style={[styles.caixaMensagem, tipoAviso === 'erro' ? styles.caixaErro : styles.caixaSucesso]}>
