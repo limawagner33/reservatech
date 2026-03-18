@@ -5,10 +5,10 @@ import { useRecursos, Reserva, Recurso } from '../../src/context/RecursosContext
 
 // Categorias usando URLs da web corporativas (Estilo Unsplash)
 const categoriasReserva = [
-  { id: 'SALA', nome: 'Sala de Reunião', imagem: { uri: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=500&q=80' } },
-  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: { uri: 'https://images.unsplash.com/photo-1517433670267-08bbd4be890f?auto=format&fit=crop&w=500&q=80' } },
-  { id: 'VEICULO', nome: 'Veículos', imagem: { uri: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=500&q=80' } },
-  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: { uri: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=500&q=80' } },
+  { id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/reuniao.png') },
+  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/equipamento.png') },
+  { id: 'VEICULO', nome: 'Veículos', imagem: require('../../assets/images/veiculo.png') },
+  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: require('../../assets/images/lab.png') },
 ];
 
 const formatarDataLocal = (ts: number) => { const d = new Date(ts); return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`; };
@@ -123,7 +123,20 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
             </View>
           </View>
           <Text style={styles.infoLimiteHome}>Limites: {formatarDuracaoVisual(recurso.minHoras)} a {formatarDuracaoVisual(recurso.maxHoras)}</Text>
-          {aviso ? <View style={[styles.caixaMensagemHome, tipoAviso === 'erro' ? styles.caixaErroHome : styles.caixaSucessoHome]}><Text style={styles.textoMensagemHome}>{aviso}</Text></View> : null}
+          {aviso ? (<View style={[styles.caixaMensagemHome,{backgroundColor: tipoAviso === 'erro' 
+        ? (isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2') 
+        : (isDark ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5'),
+      borderLeftColor: tipoAviso === 'erro' ? '#EF4444' : '#10B981'
+    }
+  ]}>
+    <Text style={[
+      styles.textoMensagemHome, 
+      { color: tipoAviso === 'erro' ? (isDark ? '#FCA5A5' : '#B91C1C') : (isDark ? '#6EE7B7' : '#047857') }
+    ]}>
+      {aviso}
+    </Text>
+  </View>
+) : null}
           <TouchableOpacity style={styles.btnConfirmarHome} onPress={handleReservarHome}><Text style={styles.txtConfirmarHome}>Confirmar</Text></TouchableOpacity>
           <View style={{height: 20}} />
         </ScrollView>

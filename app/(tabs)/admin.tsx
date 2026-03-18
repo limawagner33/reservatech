@@ -5,10 +5,10 @@ import { useRecursos } from '../../src/context/RecursosContext';
 
 // Categorias usando URLs da web para não quebrar o build na Vercel
 const categorias = [
-  { id: 'SALA', nome: 'Sala de Reunião', imagem: { uri: 'https://cdn-icons-png.flaticon.com/512/2942/2942933.png' } },
-  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: { uri: 'https://cdn-icons-png.flaticon.com/512/3004/3004100.png' } },
-  { id: 'VEICULO', nome: 'Veículos', imagem: { uri: 'https://cdn-icons-png.flaticon.com/512/2962/2962303.png' } },
-  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: { uri: 'https://cdn-icons-png.flaticon.com/512/933/933042.png' } },
+  { id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/reuniao.png') },
+  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/equipamento.png') },
+  { id: 'VEICULO', nome: 'Veículos', imagem: require('../../assets/images/veiculo.png') },
+  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: require('../../assets/images/lab.png') },
 ];
 
 export default function AdminScreen() {
@@ -21,6 +21,16 @@ export default function AdminScreen() {
   const [minH, setMinH] = useState(''); const [minM, setMinM] = useState('');
   const [maxH, setMaxH] = useState(''); const [maxM, setMaxM] = useState('');
   const [aviso, setAviso] = useState(''); const [tipoAviso, setTipoAviso] = useState<'erro' | 'sucesso' | ''>('');
+  const { reservarRecurso, tema } = useRecursos();
+  const isDark = tema === 'dark';
+  const c = {
+    bg: isDark ? '#09090B' : '#FFFFFF',
+    card: isDark ? '#18181B' : '#FFFFFF',
+    textoPri: isDark ? '#FAFAFA' : '#171717',
+    textoSec: isDark ? '#A1A1AA' : '#52525B',
+    borda: isDark ? '#27272A' : '#E2E8F0',
+    destaque: '#0047AB'
+  };
 
   const abrirModalCadastro = (cat: any) => {
     setCategoriaSelecionada(cat); setNome(''); setMinH(''); setMinM(''); setMaxH(''); setMaxM(''); setAviso(''); setModalCadastroVisivel(true);
@@ -107,7 +117,24 @@ export default function AdminScreen() {
                   <TextInput style={styles.inputRelogioAdmin} placeholder="00" placeholderTextColor="#A1A1AA" keyboardType="numeric" maxLength={2} value={maxM} onChangeText={(v) => processarTempo(v, 59, setMaxM)} />
                 </View>
               </View>
-              {aviso ? <View style={[styles.caixaMensagemAdmin, tipoAviso === 'erro' ? styles.caixaErroAdmin : styles.caixaSucessoAdmin]}><Text style={styles.textoMensagemAdmin}>{aviso}</Text></View> : null}
+              {aviso ? (
+  <View style={[
+    styles.caixaMensagemAdmin, 
+    { 
+      backgroundColor: tipoAviso === 'erro' 
+        ? (isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2') 
+        : (isDark ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5'),
+      borderLeftColor: tipoAviso === 'erro' ? '#EF4444' : '#10B981'
+    }
+  ]}>
+    <Text style={[
+      styles.caixaMensagemAdmin, 
+      { color: tipoAviso === 'erro' ? (isDark ? '#FCA5A5' : '#B91C1C') : (isDark ? '#6EE7B7' : '#047857') }
+    ]}>
+      {aviso}
+    </Text>
+  </View>
+) : null}
               <TouchableOpacity style={styles.btnConfirmarAdmin} onPress={handleCadastrarRecurso}><Text style={styles.txtConfirmarAdmin}>Registrar</Text></TouchableOpacity>
               <View style={{height: 20}} />
             </ScrollView>
