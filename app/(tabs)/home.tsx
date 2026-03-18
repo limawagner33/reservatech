@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Keyboa
 import { useRouter } from 'expo-router';
 import { useRecursos, Reserva, Recurso } from '../../src/context/RecursosContext';
 
-//
+// Categorias usando URLs da web corporativas (Estilo Unsplash)
 const categoriasReserva = [
   { id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/reuniao.png') },
   { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/equipamento.png') },
@@ -128,31 +128,27 @@ export default function HomeScreen() {
   
   const [recursoSelecionadoHome, setRecursoSelecionadoHome] = useState<Recurso | null>(null);
   const [toastSemCadastroVisivel, setToastSemCadastroVisivel] = useState(false);
-  
-  // NOVO ESTADO: Guarda os recursos disponíveis quando há mais de 1 para o usuário escolher
   const [listaOpcoesVisivel, setListaOpcoesVisivel] = useState<Recurso[]>([]);
+  
+  // NOVO ESTADO: Filtro da Lista de Reservados
+  const [filtroReserva, setFiltroReserva] = useState<string | null>(null);
   
   const diasReserva = gerarDiasReserva();
 
   const isDark = tema === 'dark';
   const c = { bg: isDark ? '#09090B' : '#FFFFFF', card: isDark ? '#18181B' : '#FFFFFF', textoPri: isDark ? '#FAFAFA' : '#171717', textoSec: isDark ? '#A1A1AA' : '#52525B', borda: isDark ? '#27272A' : '#E2E8F0', destaque: '#0047AB' };
 
-  // LÓGICA DE SUB-SELEÇÃO ATUALIZADA
   const tentarReservarCategoria = (idCat: string) => {
     const recursosDessaCat = recursos.filter(r => r.tipo === idCat);
     if (recursosDessaCat.length === 0) {
-      setToastSemCadastroVisivel(true);
-      setTimeout(() => setToastSemCadastroVisivel(false), 4000);
-      return;
+      setToastSemCadastroVisivel(true); setTimeout(() => setToastSemCadastroVisivel(false), 4000); return;
     }
-    if (recursosDessaCat.length === 1) {
-      // Se só tem 1, vai direto pra reserva
-      setRecursoSelecionadoHome(recursosDessaCat[0]);
-    } else {
-      // Se tem mais de 1, abre o modal de escolha
-      setListaOpcoesVisivel(recursosDessaCat);
-    }
+    if (recursosDessaCat.length === 1) { setRecursoSelecionadoHome(recursosDessaCat[0]); } 
+    else { setListaOpcoesVisivel(recursosDessaCat); }
   };
+
+  // LÓGICA DO FILTRO: Retorna apenas recursos que têm reserva E que batem com o filtro atual
+  const recursosReservadosFiltrados = recursos.filter(r => r.reservas.length > 0 && (filtroReserva ? r.tipo === filtroReserva : true));
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
@@ -189,28 +185,59 @@ export default function HomeScreen() {
 
         <View style={styles.rowEntreHome}>
           <Text style={[styles.txtReservadosHeaderHome, { color: c.textoPri }]}>Recursos reservados</Text>
-          <TouchableOpacity><Text style={styles.txtVerTodasHome}>Ver todas {'>'}</Text></TouchableOpacity>
         </View>
+
+        {/* UI DO FILTRO DE CATEGORIAS */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }} contentContainerStyle={{ paddingRight: 24 }}>
+          <TouchableOpacity 
+            style={[styles.chipFiltro, { backgroundColor: filtroReserva === null ? c.destaque : c.card, borderColor: filtroReserva === null ? c.destaque : c.borda }]} 
+            onPress={() => setFiltroReserva(null)}>
+            <Text style={{ color: filtroReserva === null ? '#FFF' : c.textoSec, fontSize: 12, fontWeight: 'bold' }}>Todos</Text>
+          </TouchableOpacity>
+          {categoriasReserva.map(cat => (
+            <TouchableOpacity 
+              key={cat.id} 
+              style={[styles.chipFiltro, { backgroundColor: filtroReserva === cat.id ? c.destaque : c.card, borderColor: filtroReserva === cat.id ? c.destaque : c.borda }]} 
+              onPress={() => setFiltroReserva(cat.id)}>
+              <Text style={{ color: filtroReserva === cat.id ? '#FFF' : c.textoSec, fontSize: 12, fontWeight: 'bold' }}>{cat.nome}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
         
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carrosselReservadosHome} contentContainerStyle={{paddingRight: 24}}>
-          {recursos.filter(r => r.reservas.length > 0).length === 0 ? <Text style={[styles.textoVazioHome, { color: c.textoSec }]}>Nenhuma reserva ativa.</Text> : recursos.map(recurso => (
-            recurso.reservas.map(reserva => (
-              <View key={reserva.id} style={[styles.cardReservadoInspira, { backgroundColor: c.card, borderColor: c.borda }]}>
-                <Image source={categoriasReserva.find(cat => cat.id === recurso.tipo)?.imagem} style={styles.imgCardReservado} />
-                <View style={styles.contentCardReservado}>
-                  <View style={styles.rowEntreCard}>
-                    <Text style={[styles.nomeRecursoCardHome, { color: c.textoPri }]}>{recurso.nome}</Text>
-                    <StatusReativoHome reserva={reserva} recurso={recurso} onExpirar={() => finalizarReservaAutomatica(recurso.id, reserva.id, recurso.tipo, recurso.nome)} corDestaque={c.destaque} />
+          {recursosReservadosFiltrados.length === 0 ? <Text style={[styles.textoVazioHome, { color: c.textoSec }]}>Nenhuma reserva ativa para este filtro.</Text> : recursosReservadosFiltrados.map(recurso => (
+            recurso.reservas.map(reserva => {
+              const duracaoHoras = (reserva.fimTimestamp - reserva.inicioTimestamp) / 3600000;
+              return (
+                <View key={reserva.id} style={[styles.cardReservadoInspira, { backgroundColor: c.card, borderColor: c.borda }]}>
+                  <Image source={categoriasReserva.find(cat => cat.id === recurso.tipo)?.imagem} style={styles.imgCardReservado} />
+                  
+                  {/* UI ATUALIZADA DO CARTÃO DE RESERVAS (Mais Detalhado) */}
+                  <View style={styles.contentCardReservado}>
+                    <View style={styles.rowEntreCard}>
+                      <Text style={[styles.nomeRecursoCardHome, { color: c.textoPri }]}>{recurso.nome}</Text>
+                      <StatusReativoHome reserva={reserva} recurso={recurso} onExpirar={() => finalizarReservaAutomatica(recurso.id, reserva.id, recurso.tipo, recurso.nome)} corDestaque={c.destaque} />
+                    </View>
+                    
+                    <View style={styles.detalhesReservaContainer}>
+                      <Text style={[styles.txtDetalheLinha, { color: c.textoSec }]}>
+                        <Text style={{ fontWeight: 'bold', color: c.textoPri }}>Início:</Text> {formatarDataLocal(reserva.inicioTimestamp)} às {formatarHoraLocal(reserva.inicioTimestamp)}
+                      </Text>
+                      <Text style={[styles.txtDetalheLinha, { color: c.textoSec }]}>
+                        <Text style={{ fontWeight: 'bold', color: c.textoPri }}>Duração:</Text> {formatarDuracaoVisual(duracaoHoras)}
+                      </Text>
+                      <Text style={[styles.txtDetalheLinha, { color: c.textoSec }]}>
+                        <Text style={{ fontWeight: 'bold', color: c.textoPri }}>Término:</Text> {formatarDataLocal(reserva.fimTimestamp)} às {formatarHoraLocal(reserva.fimTimestamp)}
+                      </Text>
+                    </View>
                   </View>
-                  <Text style={[styles.txtDataReservaCardHome, { color: c.textoSec }]}>{formatarDataLocal(reserva.inicioTimestamp)}, {formatarHoraLocal(reserva.inicioTimestamp)} - {formatarHoraLocal(reserva.fimTimestamp)}</Text>
                 </View>
-              </View>
-            ))
+              );
+            })
           ))}
         </ScrollView>
       </ScrollView>
 
-      {/*NOVO MODAL: LISTA DE ESCOLHA DE RECURSOS (Caso a categoria tenha mais de 1) */}
       {listaOpcoesVisivel.length > 0 && (
         <View style={styles.modalOverlayHomeAbsoluto}>
           <View style={[styles.modalContentHome, { backgroundColor: c.bg, borderColor: c.borda, maxHeight: '70%' }]}>
@@ -222,14 +249,7 @@ export default function HomeScreen() {
               </View>
               <ScrollView showsVerticalScrollIndicator={false}>
                 {listaOpcoesVisivel.map(item => (
-                  <TouchableOpacity 
-                    key={item.id} 
-                    style={[styles.btnOpcaoRecurso, { backgroundColor: isDark ? '#18181B' : '#F8FAFC', borderColor: c.borda }]}
-                    onPress={() => {
-                      setListaOpcoesVisivel([]); // Fecha a lista
-                      setRecursoSelecionadoHome(item); // Abre o formulário de reserva
-                    }}
-                  >
+                  <TouchableOpacity key={item.id} style={[styles.btnOpcaoRecurso, { backgroundColor: isDark ? '#18181B' : '#F8FAFC', borderColor: c.borda }]} onPress={() => { setListaOpcoesVisivel([]); setRecursoSelecionadoHome(item); }}>
                     <Text style={{ color: c.textoPri, fontWeight: 'bold', fontSize: 16 }}>{item.nome}</Text>
                     <Text style={{ color: c.textoSec, fontSize: 12, marginTop: 4 }}>Limite: {formatarDuracaoVisual(item.minHoras)} a {formatarDuracaoVisual(item.maxHoras)}</Text>
                   </TouchableOpacity>
@@ -239,7 +259,6 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* FORMULÁRIO SOBREPOSTO DE RESERVA (Abre logo após o usuário escolher ou se tiver apenas 1) */}
       {recursoSelecionadoHome && (
         <FormularioReservaHome recurso={recursoSelecionadoHome} dias={diasReserva} onClose={() => setRecursoSelecionadoHome(null)} onSucesso={() => setRecursoSelecionadoHome(null)} />
       )}
@@ -247,7 +266,6 @@ export default function HomeScreen() {
   );
 }
 
-// ESTILOS (Adicionei o botão de opção da nova lista)
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24 },
   toastSemCadastroAdmin: { position: 'absolute', top: 50, right: 10, backgroundColor: '#B91C1C', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 16, zIndex: 9999, shadowColor: '#B91C1C', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5 },
@@ -267,14 +285,16 @@ const styles = StyleSheet.create({
   rowEntreHome: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   txtReservadosHeaderHome: { fontSize: 16, fontWeight: 'bold' },
   txtVerTodasHome: { color: '#0047AB', fontSize: 12, fontWeight: 'bold' },
+  chipFiltro: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1, marginRight: 8 },
   carrosselReservadosHome: { paddingVertical: 10 },
   cardReservadoInspira: { width: 300, borderRadius: 20, marginRight: 16, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 6, overflow: 'hidden' },
   imgCardReservado: { width: '100%', height: 140 },
   contentCardReservado: { padding: 16 },
-  rowEntreCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  rowEntreCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   nomeRecursoCardHome: { fontSize: 16, fontWeight: '600' },
   txtCronometroHome: { fontSize: 12, fontWeight: 'bold' },
-  txtDataReservaCardHome: { fontSize: 12 },
+  detalhesReservaContainer: { marginTop: 4, gap: 4 },
+  txtDetalheLinha: { fontSize: 12 },
   textoVazioHome: { fontSize: 12 },
   modalOverlayHomeAbsoluto: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0, 0, 0, 0.9)', zIndex: 1000, justifyContent: 'center', padding: 20 },
   modalContentHome: { width: '100%', borderRadius: 24, padding: 24, borderWidth: 1 },
@@ -291,5 +311,5 @@ const styles = StyleSheet.create({
   caixaMensagemHome: { padding: 12, borderRadius: 8, marginBottom: 20, borderLeftWidth: 4 }, textoMensagemHome: { fontSize: 12, fontWeight: 'bold', textAlign: 'center' },
   infoLimiteHome: { fontSize: 10, color: '#A1A1AA', textAlign: 'center', marginBottom: 20 },
   btnConfirmarHome: { backgroundColor: '#0047AB', padding: 18, borderRadius: 12, alignItems: 'center' }, txtConfirmarHome: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase' },
-  btnOpcaoRecurso: { padding: 16, borderRadius: 12, borderWidth: 1, marginBottom: 12 } // Estilo novo para o botão de escolha
+  btnOpcaoRecurso: { padding: 16, borderRadius: 12, borderWidth: 1, marginBottom: 12 }
 });
