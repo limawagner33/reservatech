@@ -30,26 +30,21 @@ export default function LoginScreen() {
     Keyboard.dismiss(); 
     setErro('');
 
-    // 1. Cria os "pacotinhos" de quem tem permissão para entrar
+    // criei os pacotinhos lógicos para ficar legível e não bugar
     const isUserValido = (matricula === '1234' && senha === 'user');
     const isAdminValido = (matricula === '9999' && senha === 'admin');
 
-    // 2. Se a pessoa NÃO (!) for User E NÃO (!) for Admin, barra!
     if (!isUserValido && !isAdminValido) {
       setErro('Verifique sua matrícula e senha.'); 
       return;
     }
 
-    // 3. Se passou da barreira, é sucesso!
-    setSucesso(true);
-    setTimeout(() => {
-      setSucesso(false);
-      if (matricula === '9999') { 
-        router.replace('/admin'); 
-      } else { 
-        router.replace('/home'); 
-      }
-    }, 1500);
+    // Se o login foi sucesso, navega e envia um parâmetro "login=true" na mala
+    if (isAdminValido) { 
+      router.replace({ pathname: '/admin', params: { login: 'true' } }); 
+    } else { 
+      router.replace({ pathname: '/home', params: { login: 'true' } }); 
+    }
   };
 
   return (
@@ -62,12 +57,6 @@ export default function LoginScreen() {
         </TouchableOpacity>
       </View>
 
-      {sucesso && (
-        <View style={styles.toastSucesso}>
-          <Text style={styles.txtToastSucesso}>✓ Login Bem-Sucedido</Text>
-        </View>
-      )}
-
       <View style={[styles.cardLogin, { backgroundColor: c.card, borderColor: c.borda }]}>
         <View style={styles.brandContainer}>
           <View style={[styles.logoBadge, { backgroundColor: c.inputBg }]}>
@@ -78,7 +67,7 @@ export default function LoginScreen() {
         </View>
 
         <Text style={[styles.labelInput, { color: c.textoSec }]}>Matrícula</Text>
-        <TextInput style={[styles.inputLogin, { backgroundColor: c.inputBg, color: c.textoPri, borderColor: c.borda }]} placeholder="Ex: 1234" placeholderTextColor={c.textoSec} keyboardType="numeric" value={matricula} onChangeText={(t) => {setMatricula(t); setErro('');}} maxLength={6} />
+        <TextInput style={[styles.inputLogin, { backgroundColor: c.inputBg, color: c.textoPri, borderColor: c.borda }]} placeholder="Ex: 1234/user or 9999/admin" placeholderTextColor={c.textoSec} keyboardType="numeric" value={matricula} onChangeText={(t) => {setMatricula(t); setErro('');}} maxLength={6} />
 
         <Text style={[styles.labelInput, { color: c.textoSec }]}>Senha</Text>
         <TextInput style={[styles.inputLogin, { backgroundColor: c.inputBg, color: c.textoPri, borderColor: c.borda }]} placeholder="••••••••" placeholderTextColor={c.textoSec} secureTextEntry value={senha} onChangeText={(t) => {setSenha(t); setErro('');}} />

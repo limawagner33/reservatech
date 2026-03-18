@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Keyboard, Platform, Image } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useRecursos } from '../../src/context/RecursosContext';
 
 // 
@@ -13,7 +13,13 @@ const categorias = [
 
 export default function AdminScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { recursos, adicionarRecurso, tema, alternarTema } = useRecursos();
+
+  const [toastLogin, setToastLogin] = useState(params.login === 'true');
+  React.useEffect(() => {
+    if (toastLogin) { setTimeout(() => setToastLogin(false), 2000); }
+  }, [toastLogin]);
 
   const isDark = tema === 'dark';
   const c = {
@@ -67,6 +73,14 @@ export default function AdminScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
+      
+      {/* O AVISO DE LOGIN NO TOPO DO ADMIN */}
+      {toastLogin && (
+        <View style={styles.toastSucesso}>
+          <Text style={styles.txtToastSucesso}>✓ Login Bem-Sucedido</Text>
+        </View>
+      )}
+
       <View style={styles.headerAdmin}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <TouchableOpacity style={[styles.btnSairHeader, { borderColor: c.borda, backgroundColor: isDark ? '#18181B' : '#F8FAFC' }]} onPress={() => router.replace('/')}>
@@ -199,4 +213,6 @@ const styles = StyleSheet.create({
   textoMensagemAdmin: { fontSize: 12, fontWeight: 'bold', textAlign: 'center' },
   btnConfirmarAdmin: { backgroundColor: '#0047AB', padding: 18, borderRadius: 12, alignItems: 'center' }, 
   txtConfirmarAdmin: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase' },
+  toastSucesso: { position: 'absolute', top: 60, alignSelf: 'center', backgroundColor: '#ECFDF5', borderColor: '#10B981', borderWidth: 1, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24, zIndex: 9999 },
+  txtToastSucesso: { color: '#047857', fontSize: 14, fontWeight: 'bold' },
 });

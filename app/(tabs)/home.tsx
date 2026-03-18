@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Keyboard, Platform, Image } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Keyboard, Platform, Image, Alert } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useRecursos, Reserva, Recurso } from '../../src/context/RecursosContext';
 
 // Categorias usando URLs da web corporativas (Estilo Unsplash)
@@ -53,13 +53,17 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
   const [hIni, setHIni] = useState(''); const [mIni, setMIni] = useState('');
   const [hFim, setHFim] = useState(''); const [mFim, setMFim] = useState('');
   const [aviso, setAviso] = useState(''); const [tipoAviso, setTipoAviso] = useState<'erro' | 'sucesso' | ''>('');
+  
+  // NOVO ESTADO: Controla o Alerta Personalizado
+  const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
 
   const processarTempoForm = (valor: string, max: number, setValor: (v: string) => void) => {
     const numStr = valor.replace(/[^0-9]/g, ''); if (numStr === '') { setValor(''); return; }
     const num = parseInt(numStr, 10); if (num > max) setValor(max.toString().padStart(2, '0')); else setValor(numStr);
   };
 
-  const handleReservarHome = () => {
+  // APENAS VALIDA (Se estiver tudo certo, abre o alerta customizado)
+  const handlePrepararReserva = () => {
     Keyboard.dismiss(); setAviso(''); setTipoAviso('');
     if (matricula.length < 4 || !hIni || !mIni || !hFim || !mFim) { setTipoAviso('erro'); setAviso('QA: Preencha todos os campos.'); return; }
     const inicio = new Date(dataIni.getFullYear(), dataIni.getMonth(), dataIni.getDate(), parseInt(hIni), parseInt(mIni), 0).getTime();
@@ -69,6 +73,15 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
     if (fim <= inicio) { setTipoAviso('erro'); setAviso('QA: O término deve ser superior ao início.'); return; }
     const duracaoH = (fim - inicio) / 3600000;
     if (duracaoH < recurso.minHoras || duracaoH > recurso.maxHoras) { setTipoAviso('erro'); setAviso(`QA: Exigido ${formatarDuracaoVisual(recurso.minHoras)} a ${formatarDuracaoVisual(recurso.maxHoras)}.`); return; }
+    
+    // Se passou na malha fina do QA, mostra o próprio Alerta!
+    setMostrarConfirmacao(true);
+  };
+
+  // EXECUTA A RESERVA DE FATO (Chamado quando o usuário clica "Sim" no Alerta)
+  const executarReserva = () => {
+    const inicio = new Date(dataIni.getFullYear(), dataIni.getMonth(), dataIni.getDate(), parseInt(hIni), parseInt(mIni), 0).getTime();
+    const fim = new Date(dataFim.getFullYear(), dataFim.getMonth(), dataFim.getDate(), parseInt(hFim), parseInt(mFim), 0).getTime();
     try {
       reservarRecurso(recurso.id, matricula, inicio, fim);
       setTipoAviso('sucesso'); setAviso('SUCESSO: Agendado.'); setTimeout(() => { onSucesso(); }, 1500);
@@ -77,6 +90,7 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
 
   return (
     <View style={styles.modalOverlayHomeAbsoluto}>
+      {/* --- FORMULÁRIO PRINCIPAL --- */}
       <View style={[styles.modalContentHome, { backgroundColor: c.bgModal, borderColor: c.borda }]}>
         <View style={styles.modalHeaderHome}>
           <Text style={[styles.modalTitleHome, { color: c.textoPri }]}>{recurso.nome}</Text>
@@ -114,10 +128,39 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
               <Text style={[styles.textoMensagemHome, { color: tipoAviso === 'erro' ? (isDark ? '#FCA5A5' : '#B91C1C') : (isDark ? '#6EE7B7' : '#047857') }]}>{aviso}</Text>
             </View>
           ) : null}
-          <TouchableOpacity style={styles.btnConfirmarHome} onPress={handleReservarHome}><Text style={styles.txtConfirmarHome}>Confirmar</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.btnConfirmarHome} onPress={handlePrepararReserva}><Text style={styles.txtConfirmarHome}>Reservar</Text></TouchableOpacity>
           <View style={{height: 20}} />
         </ScrollView>
       </View>
+
+      {/* ALERTA PERSONALIZADO (Modal Sobreposto) --- */}
+      {mostrarConfirmacao && (
+        <View style={[styles.modalOverlayHomeAbsoluto, { zIndex: 2000, backgroundColor: 'rgba(0,0,0,0.85)' }]}>
+          <View style={[styles.modalContentHome, { backgroundColor: c.bgModal, borderColor: c.borda, padding: 32 }]}>
+            <Text style={{ color: c.textoPri, textAlign: 'center', marginBottom: 16, fontSize: 20, fontWeight: 'bold' }}>Atenção</Text>
+            <Text style={{ color: c.textoSec, textAlign: 'center', marginBottom: 32, fontSize: 14, lineHeight: 22 }}>
+              Tem certeza que os dados preenchidos estão corretos? Não poderão ser alterados depois.
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+              <TouchableOpacity
+                style={{ flex: 1, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: c.borda, backgroundColor: c.inputBg, alignItems: 'center' }}
+                onPress={() => setMostrarConfirmacao(false)}
+              >
+                <Text style={{ color: c.textoPri, fontWeight: 'bold' }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 1, padding: 16, borderRadius: 12, backgroundColor: c.destaque, alignItems: 'center' }}
+                onPress={() => {
+                  setMostrarConfirmacao(false);
+                  executarReserva();
+                }}
+              >
+                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Confirmar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
