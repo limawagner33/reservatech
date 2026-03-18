@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, TextInp
 import { useRouter } from 'expo-router';
 import { useRecursos, Recurso } from '../../src/context/RecursosContext';
 
-// Categorias usadas tanto para o filtro quanto para a edição
 const categoriasFiltro = [
   { id: 'SALA', nome: 'Salas' },
   { id: 'EQUIPAMENTO', nome: 'Equipamentos' },
@@ -30,7 +29,10 @@ export default function AdminListaScreen() {
   const [modalEditVisivel, setModalEditVisivel] = useState(false);
   const [recursoEditando, setRecursoEditando] = useState<Recurso | null>(null);
   
-  // 👉 NOVO ESTADO: Categoria Editável
+  // 👉 NOVO ESTADO: Modal de Exclusão (Substitui o window.confirm)
+  const [modalExcluirVisivel, setModalExcluirVisivel] = useState(false);
+  const [idParaExcluir, setIdParaExcluir] = useState<number | null>(null);
+
   const [categoriaEdit, setCategoriaEdit] = useState('');
   const [nomeEdit, setNomeEdit] = useState('');
   const [minH, setMinH] = useState(''); const [minM, setMinM] = useState('');
@@ -54,7 +56,7 @@ export default function AdminListaScreen() {
   const abrirEdicao = (recurso: Recurso) => {
     setRecursoEditando(recurso);
     setNomeEdit(recurso.nome);
-    setCategoriaEdit(recurso.tipo); // Puxa a categoria atual do banco
+    setCategoriaEdit(recurso.tipo);
     
     const minHFloor = Math.floor(recurso.minHoras);
     const minMFloor = Math.round((recurso.minHoras - minHFloor) * 60);
@@ -91,17 +93,19 @@ export default function AdminListaScreen() {
     if (minDecimal >= maxDecimal) { setTipoAviso('erro'); setAviso('QA: Mínimo deve ser menor que o Máximo.'); return; }
 
     if (recursoEditando) {
-      // Salva puxando o state da categoriaEdit
-      atualizarRecurso({ 
-        id: recursoEditando.id, 
-        tipo: categoriaEdit, 
-        nome: nomeEdit.trim(), 
-        minHoras: minDecimal, 
-        maxHoras: maxDecimal 
-      });
+      atualizarRecurso({ id: recursoEditando.id, tipo: categoriaEdit, nome: nomeEdit.trim(), minHoras: minDecimal, maxHoras: maxDecimal });
       setTipoAviso('sucesso'); setAviso('SUCESSO: Recurso atualizado.');
       setTimeout(() => setModalEditVisivel(false), 1500);
     }
+  };
+
+  // 👉 AÇÃO DE EXCLUSÃO DEFINITIVA
+  const confirmarExclusao = () => {
+    if (idParaExcluir !== null) {
+      excluirRecurso(idParaExcluir);
+    }
+    setModalExcluirVisivel(false);
+    setIdParaExcluir(null);
   };
 
   return (
@@ -144,12 +148,10 @@ export default function AdminListaScreen() {
                 <TouchableOpacity style={[styles.btnAcao, { borderColor: c.destaque }]} onPress={() => abrirEdicao(recurso)}>
                   <Text style={{ color: c.destaque, fontWeight: 'bold', fontSize: 12 }}>Editar</Text>
                 </TouchableOpacity>
+                {/* 👉 BOTÃO EXCLUIR CHAMA O MODAL NOVO */}
                 <TouchableOpacity style={[styles.btnAcao, { borderColor: c.perigo }]} onPress={() => {
-                  if (Platform.OS === 'web') {
-                    if (window.confirm(`Tem certeza que deseja excluir ${recurso.nome}?`)) excluirRecurso(recurso.id);
-                  } else {
-                    excluirRecurso(recurso.id);
-                  }
+                  setIdParaExcluir(recurso.id);
+                  setModalExcluirVisivel(true);
                 }}>
                   <Text style={{ color: c.perigo, fontWeight: 'bold', fontSize: 12 }}>Excluir</Text>
                 </TouchableOpacity>
@@ -159,7 +161,36 @@ export default function AdminListaScreen() {
         )}
       </ScrollView>
 
-      {/* 👉 MODAL DE EDIÇÃO */}
+      {/* --- 👉 MODAL DE CONFIRMAÇÃO DE EXCLUSÃO (Double Opt-in) --- */}
+      {modalExcluirVisivel && (
+        <View style={[styles.modalOverlayAbsoluto, { zIndex: 2000, backgroundColor: 'rgba(0,0,0,0.85)' }]}>
+          <View style={[styles.modalContent, { backgroundColor: c.bg, borderColor: c.borda, borderWidth: 1, padding: 32 }]}>
+            <Text style={{ color: c.perigo, textAlign: 'center', marginBottom: 16, fontSize: 20, fontWeight: 'bold' }}>Tem certeza?</Text>
+            <Text style={{ color: c.textoSec, textAlign: 'center', marginBottom: 32, fontSize: 14, lineHeight: 22 }}>
+              Você está prestes a excluir este recurso do sistema. Essa ação não poderá ser desfeita e removerá todas as reservas associadas a ele.
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+              <TouchableOpacity
+                style={{ flex: 1, padding: 16, borderRadius: 12, borderWidth: 1, borderColor: c.borda, backgroundColor: c.inputBg, alignItems: 'center' }}
+                onPress={() => {
+                  setModalExcluirVisivel(false);
+                  setIdParaExcluir(null);
+                }}
+              >
+                <Text style={{ color: c.textoPri, fontWeight: 'bold' }}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 1, padding: 16, borderRadius: 12, backgroundColor: c.perigo, alignItems: 'center' }}
+                onPress={confirmarExclusao}
+              >
+                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Excluir</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* MODAL DE EDIÇÃO */}
       {modalEditVisivel && recursoEditando && (
         <View style={styles.modalOverlayAbsoluto}>
           <View style={[styles.modalContent, { backgroundColor: c.bg, borderColor: c.borda, borderWidth: 1, maxHeight: '90%' }]}>
@@ -172,7 +203,6 @@ export default function AdminListaScreen() {
             
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               
-              {/* 👉 NOVO: SELETOR DE CATEGORIA NA EDIÇÃO */}
               <Text style={[styles.labelModal, { color: c.textoSec }]}>Categoria</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
                 {categoriasFiltro.map(cat => (
@@ -240,7 +270,6 @@ const styles = StyleSheet.create({
   txtDetalhe: { fontSize: 12 },
   btnAcao: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1 },
   
-  // Estilos do Modal de Edição
   modalOverlayAbsoluto: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0, 0, 0, 0.9)', zIndex: 1000, justifyContent: 'center', padding: 20 },
   modalContent: { width: '100%', borderRadius: 24, padding: 24 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }, 
