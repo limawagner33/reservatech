@@ -28,6 +28,9 @@ interface RecursosContextData {
   notificacao: string | null;
   fecharNotificacao: () => void;
   finalizarReservaAutomatica: (recursoId: number, reservaId: string, tipo: string, nome: string) => void;
+  // NOVOS CONTROLES DE TEMA AQUI
+  tema: 'light' | 'dark';
+  alternarTema: () => void;
 }
 
 const RecursosContext = createContext<RecursosContextData>({} as RecursosContextData);
@@ -35,6 +38,13 @@ const RecursosContext = createContext<RecursosContextData>({} as RecursosContext
 export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const [recursos, setRecursos] = useState<Recurso[]>([]);
   const [notificacao, setNotificacao] = useState<string | null>(null);
+  // ESTADO INICIAL DO TEMA (Modo Claro Padrão)
+  const [tema, setTema] = useState<'light' | 'dark'>('light');
+
+  // FUNÇÃO DE ALTERNAR
+  const alternarTema = useCallback(() => {
+    setTema(prev => prev === 'light' ? 'dark' : 'light');
+  }, []);
 
   const tocarAlerta = async () => {
     if (Platform.OS === 'web') {
@@ -91,7 +101,11 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
   const fecharNotificacao = useCallback(() => setNotificacao(null), []);
 
   return (
-    <RecursosContext.Provider value={{ recursos, adicionarRecurso, atualizarRecurso, excluirRecurso, reservarRecurso, notificacao, fecharNotificacao, finalizarReservaAutomatica }}>
+    <RecursosContext.Provider value={{ 
+      recursos, adicionarRecurso, atualizarRecurso, excluirRecurso, reservarRecurso, 
+      notificacao, fecharNotificacao, finalizarReservaAutomatica,
+      tema, alternarTema // EXPORTANDO AQUI
+    }}>
       {children}
     </RecursosContext.Provider>
   );
