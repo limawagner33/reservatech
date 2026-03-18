@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Keyboa
 import { useRouter } from 'expo-router';
 import { useRecursos, Reserva, Recurso } from '../../src/context/RecursosContext';
 
-// Categorias usando URLs da web corporativas (Estilo Unsplash)
+//
 const categoriasReserva = [
   { id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/reuniao.png') },
   { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/equipamento.png') },
@@ -15,7 +15,6 @@ const formatarDataLocal = (ts: number) => { const d = new Date(ts); return `${d.
 const formatarHoraLocal = (ts: number) => { const d = new Date(ts); return `${d.getHours().toString().padStart(2, '0')}h${d.getMinutes().toString().padStart(2, '0')}`; };
 const formatarDuracaoVisual = (d: number) => { if (!d) return '0m'; const h = Math.floor(d); const m = Math.round((d - h) * 60); if (h === 0) return `${m}m`; if (m === 0) return `${h}h`; return `${h}h${m}m`; };
 
-// CRONÔMETRO INTELIGENTE E ISOLADO (Agora recebe a cor dinâmica)
 const StatusReativoHome = ({ reserva, recurso, onExpirar, corDestaque }: { reserva: Reserva, recurso: Recurso, onExpirar: () => void, corDestaque: string }) => {
   const [texto, setTexto] = useState('');
   useEffect(() => {
@@ -44,20 +43,10 @@ const gerarDiasReserva = () => {
   return dias;
 };
 
-// COMPONENTE DO FORMULÁRIO ISOLADO (Lê o tema para mudar as cores do Modal)
 const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso: Recurso, dias: any[], onClose: () => void, onSucesso: () => void }) => {
-  const { reservarRecurso, tema } = useRecursos(); // Puxando o tema aqui também
-  
-  // Paleta dinâmica para o Modal
+  const { reservarRecurso, tema } = useRecursos();
   const isDark = tema === 'dark';
-  const c = {
-    bgModal: isDark ? '#18181B' : '#FFFFFF',
-    inputBg: isDark ? '#09090B' : '#F8FAFC',
-    textoPri: isDark ? '#FAFAFA' : '#171717',
-    textoSec: isDark ? '#A1A1AA' : '#52525B',
-    borda: isDark ? '#27272A' : '#E2E8F0',
-    destaque: '#0047AB'
-  };
+  const c = { bgModal: isDark ? '#18181B' : '#FFFFFF', inputBg: isDark ? '#09090B' : '#F8FAFC', textoPri: isDark ? '#FAFAFA' : '#171717', textoSec: isDark ? '#A1A1AA' : '#52525B', borda: isDark ? '#27272A' : '#E2E8F0', destaque: '#0047AB' };
 
   const [matricula, setMatricula] = useState('');
   const [dataIni, setDataIni] = useState(dias[0].data); const [dataFim, setDataFim] = useState(dias[0].data);
@@ -79,13 +68,10 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
     if (inicio <= agora) { setTipoAviso('erro'); setAviso('QA: Inicie no futuro.'); return; }
     if (fim <= inicio) { setTipoAviso('erro'); setAviso('QA: O término deve ser superior ao início.'); return; }
     const duracaoH = (fim - inicio) / 3600000;
-    if (duracaoH < recurso.minHoras || duracaoH > recurso.maxHoras) {
-      setTipoAviso('erro'); setAviso(`QA: Exigido ${formatarDuracaoVisual(recurso.minHoras)} a ${formatarDuracaoVisual(recurso.maxHoras)}.`); return;
-    }
+    if (duracaoH < recurso.minHoras || duracaoH > recurso.maxHoras) { setTipoAviso('erro'); setAviso(`QA: Exigido ${formatarDuracaoVisual(recurso.minHoras)} a ${formatarDuracaoVisual(recurso.maxHoras)}.`); return; }
     try {
       reservarRecurso(recurso.id, matricula, inicio, fim);
-      setTipoAviso('sucesso'); setAviso('SUCESSO: Agendado.');
-      setTimeout(() => { onSucesso(); }, 1500);
+      setTipoAviso('sucesso'); setAviso('SUCESSO: Agendado.'); setTimeout(() => { onSucesso(); }, 1500);
     } catch (e: any) { setTipoAviso('erro'); setAviso(e.message); }
   };
 
@@ -123,20 +109,11 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
             </View>
           </View>
           <Text style={styles.infoLimiteHome}>Limites: {formatarDuracaoVisual(recurso.minHoras)} a {formatarDuracaoVisual(recurso.maxHoras)}</Text>
-          {aviso ? (<View style={[styles.caixaMensagemHome,{backgroundColor: tipoAviso === 'erro' 
-        ? (isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2') 
-        : (isDark ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5'),
-      borderLeftColor: tipoAviso === 'erro' ? '#EF4444' : '#10B981'
-    }
-  ]}>
-    <Text style={[
-      styles.textoMensagemHome, 
-      { color: tipoAviso === 'erro' ? (isDark ? '#FCA5A5' : '#B91C1C') : (isDark ? '#6EE7B7' : '#047857') }
-    ]}>
-      {aviso}
-    </Text>
-  </View>
-) : null}
+          {aviso ? (
+            <View style={[styles.caixaMensagemHome, { backgroundColor: tipoAviso === 'erro' ? (isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2') : (isDark ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5'), borderLeftColor: tipoAviso === 'erro' ? '#EF4444' : '#10B981' }]}>
+              <Text style={[styles.textoMensagemHome, { color: tipoAviso === 'erro' ? (isDark ? '#FCA5A5' : '#B91C1C') : (isDark ? '#6EE7B7' : '#047857') }]}>{aviso}</Text>
+            </View>
+          ) : null}
           <TouchableOpacity style={styles.btnConfirmarHome} onPress={handleReservarHome}><Text style={styles.txtConfirmarHome}>Confirmar</Text></TouchableOpacity>
           <View style={{height: 20}} />
         </ScrollView>
@@ -147,25 +124,20 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
 
 export default function HomeScreen() {
   const router = useRouter();
-  
-  // PUXANDO TEMA E ALTERNARTEMA DO CONTEXTO
   const { recursos, notificacao, fecharNotificacao, finalizarReservaAutomatica, tema, alternarTema } = useRecursos();
   
   const [recursoSelecionadoHome, setRecursoSelecionadoHome] = useState<Recurso | null>(null);
   const [toastSemCadastroVisivel, setToastSemCadastroVisivel] = useState(false);
+  
+  // NOVO ESTADO: Guarda os recursos disponíveis quando há mais de 1 para o usuário escolher
+  const [listaOpcoesVisivel, setListaOpcoesVisivel] = useState<Recurso[]>([]);
+  
   const diasReserva = gerarDiasReserva();
 
-  // PALETA DE CORES DINÂMICA
   const isDark = tema === 'dark';
-  const c = {
-    bg: isDark ? '#09090B' : '#FFFFFF',
-    card: isDark ? '#18181B' : '#FFFFFF',
-    textoPri: isDark ? '#FAFAFA' : '#171717',
-    textoSec: isDark ? '#A1A1AA' : '#52525B',
-    borda: isDark ? '#27272A' : '#E2E8F0',
-    destaque: '#0047AB'
-  };
+  const c = { bg: isDark ? '#09090B' : '#FFFFFF', card: isDark ? '#18181B' : '#FFFFFF', textoPri: isDark ? '#FAFAFA' : '#171717', textoSec: isDark ? '#A1A1AA' : '#52525B', borda: isDark ? '#27272A' : '#E2E8F0', destaque: '#0047AB' };
 
+  // LÓGICA DE SUB-SELEÇÃO ATUALIZADA
   const tentarReservarCategoria = (idCat: string) => {
     const recursosDessaCat = recursos.filter(r => r.tipo === idCat);
     if (recursosDessaCat.length === 0) {
@@ -173,7 +145,13 @@ export default function HomeScreen() {
       setTimeout(() => setToastSemCadastroVisivel(false), 4000);
       return;
     }
-    setRecursoSelecionadoHome(recursosDessaCat[0]);
+    if (recursosDessaCat.length === 1) {
+      // Se só tem 1, vai direto pra reserva
+      setRecursoSelecionadoHome(recursosDessaCat[0]);
+    } else {
+      // Se tem mais de 1, abre o modal de escolha
+      setListaOpcoesVisivel(recursosDessaCat);
+    }
   };
 
   return (
@@ -185,7 +163,6 @@ export default function HomeScreen() {
         <View style={styles.toastSemCadastroAdmin}><Text style={styles.txtToastSemCadastro}>ESTE RECURSO NÃO HÁ CADASTROS</Text></View>
       )}
 
-      {/* HEADER COM O BOTÃO ☀️/🌙 */}
       <View style={styles.headerHome}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <TouchableOpacity style={[styles.btnSairHeaderHome, { borderColor: c.borda, backgroundColor: isDark ? '#18181B' : '#F8FAFC' }]} onPress={() => router.replace('/')}>
@@ -219,11 +196,10 @@ export default function HomeScreen() {
           {recursos.filter(r => r.reservas.length > 0).length === 0 ? <Text style={[styles.textoVazioHome, { color: c.textoSec }]}>Nenhuma reserva ativa.</Text> : recursos.map(recurso => (
             recurso.reservas.map(reserva => (
               <View key={reserva.id} style={[styles.cardReservadoInspira, { backgroundColor: c.card, borderColor: c.borda }]}>
-                <Image source={categoriasReserva.find(c => c.id === recurso.tipo)?.imagem} style={styles.imgCardReservado} />
+                <Image source={categoriasReserva.find(cat => cat.id === recurso.tipo)?.imagem} style={styles.imgCardReservado} />
                 <View style={styles.contentCardReservado}>
                   <View style={styles.rowEntreCard}>
                     <Text style={[styles.nomeRecursoCardHome, { color: c.textoPri }]}>{recurso.nome}</Text>
-                    {/* Passando a cor de destaque para o cronômetro */}
                     <StatusReativoHome reserva={reserva} recurso={recurso} onExpirar={() => finalizarReservaAutomatica(recurso.id, reserva.id, recurso.tipo, recurso.nome)} corDestaque={c.destaque} />
                   </View>
                   <Text style={[styles.txtDataReservaCardHome, { color: c.textoSec }]}>{formatarDataLocal(reserva.inicioTimestamp)}, {formatarHoraLocal(reserva.inicioTimestamp)} - {formatarHoraLocal(reserva.fimTimestamp)}</Text>
@@ -234,6 +210,36 @@ export default function HomeScreen() {
         </ScrollView>
       </ScrollView>
 
+      {/*NOVO MODAL: LISTA DE ESCOLHA DE RECURSOS (Caso a categoria tenha mais de 1) */}
+      {listaOpcoesVisivel.length > 0 && (
+        <View style={styles.modalOverlayHomeAbsoluto}>
+          <View style={[styles.modalContentHome, { backgroundColor: c.bg, borderColor: c.borda, maxHeight: '70%' }]}>
+             <View style={styles.modalHeaderHome}>
+                <Text style={[styles.modalTitleHome, { color: c.textoPri }]}>Selecione a Opção</Text>
+                <TouchableOpacity onPress={() => setListaOpcoesVisivel([])} style={[styles.btnFecharModalHome, { backgroundColor: isDark ? '#09090B' : '#F8FAFC', borderColor: c.borda }]}>
+                  <Text style={{color: c.textoPri, fontWeight: 'bold'}}>X</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {listaOpcoesVisivel.map(item => (
+                  <TouchableOpacity 
+                    key={item.id} 
+                    style={[styles.btnOpcaoRecurso, { backgroundColor: isDark ? '#18181B' : '#F8FAFC', borderColor: c.borda }]}
+                    onPress={() => {
+                      setListaOpcoesVisivel([]); // Fecha a lista
+                      setRecursoSelecionadoHome(item); // Abre o formulário de reserva
+                    }}
+                  >
+                    <Text style={{ color: c.textoPri, fontWeight: 'bold', fontSize: 16 }}>{item.nome}</Text>
+                    <Text style={{ color: c.textoSec, fontSize: 12, marginTop: 4 }}>Limite: {formatarDuracaoVisual(item.minHoras)} a {formatarDuracaoVisual(item.maxHoras)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+          </View>
+        </View>
+      )}
+
+      {/* FORMULÁRIO SOBREPOSTO DE RESERVA (Abre logo após o usuário escolher ou se tiver apenas 1) */}
       {recursoSelecionadoHome && (
         <FormularioReservaHome recurso={recursoSelecionadoHome} dias={diasReserva} onClose={() => setRecursoSelecionadoHome(null)} onSucesso={() => setRecursoSelecionadoHome(null)} />
       )}
@@ -241,6 +247,7 @@ export default function HomeScreen() {
   );
 }
 
+// ESTILOS (Adicionei o botão de opção da nova lista)
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24 },
   toastSemCadastroAdmin: { position: 'absolute', top: 50, right: 10, backgroundColor: '#B91C1C', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 16, zIndex: 9999, shadowColor: '#B91C1C', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5 },
@@ -282,7 +289,7 @@ const styles = StyleSheet.create({
   relogioDigitalHome: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   inputRelogioHome: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', width: 70, height: 50, borderRadius: 8, borderWidth: 1 }, separadorRelogioHome: { fontSize: 24, fontWeight: 'bold', marginHorizontal: 12 },
   caixaMensagemHome: { padding: 12, borderRadius: 8, marginBottom: 20, borderLeftWidth: 4 }, textoMensagemHome: { fontSize: 12, fontWeight: 'bold', textAlign: 'center' },
-  caixaErroHome: { backgroundColor: '#FEF2F2', borderLeftColor: '#EF4444' }, caixaSucessoHome: { backgroundColor: '#ECFDF5', borderLeftColor: '#10B981' },
   infoLimiteHome: { fontSize: 10, color: '#A1A1AA', textAlign: 'center', marginBottom: 20 },
   btnConfirmarHome: { backgroundColor: '#0047AB', padding: 18, borderRadius: 12, alignItems: 'center' }, txtConfirmarHome: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase' },
+  btnOpcaoRecurso: { padding: 16, borderRadius: 12, borderWidth: 1, marginBottom: 12 } // Estilo novo para o botão de escolha
 });

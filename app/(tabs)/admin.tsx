@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Keyboa
 import { useRouter } from 'expo-router';
 import { useRecursos } from '../../src/context/RecursosContext';
 
+// 
 const categorias = [
-  { id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/reuniao.png') },
+{ id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/reuniao.png') },
   { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/equipamento.png') },
   { id: 'VEICULO', nome: 'Veículos', imagem: require('../../assets/images/veiculo.png') },
   { id: 'LABORATORIO', nome: 'Laboratórios', imagem: require('../../assets/images/lab.png') },
@@ -12,11 +13,8 @@ const categorias = [
 
 export default function AdminScreen() {
   const router = useRouter();
-  
-  // PUXANDO O TEMA GLOBAL DO CONTEXTO
   const { recursos, adicionarRecurso, tema, alternarTema } = useRecursos();
 
-  // PALETA DINÂMICA
   const isDark = tema === 'dark';
   const c = {
     bg: isDark ? '#09090B' : '#FFFFFF',
@@ -39,6 +37,17 @@ export default function AdminScreen() {
     setCategoriaSelecionada(cat); setNome(''); setMinH(''); setMinM(''); setMaxH(''); setMaxM(''); setAviso(''); setModalCadastroVisivel(true);
   };
 
+  // 👉 LÓGICA DO PLACEHOLDER DINÂMICO
+  const getPlaceholderCategoria = (idCat: string) => {
+    switch(idCat) {
+      case 'SALA': return 'Ex: Sala Maker';
+      case 'EQUIPAMENTO': return 'Ex: Projetor Epson';
+      case 'VEICULO': return 'Ex: Fiat Uno';
+      case 'LABORATORIO': return 'Ex: Lab de Redes';
+      default: return 'Ex: Nome do recurso';
+    }
+  };
+
   const processarTempo = (valor: string, max: number, setValor: (v: string) => void) => {
     const numStr = valor.replace(/[^0-9]/g, ''); if (numStr === '') { setValor(''); return; }
     const num = parseInt(numStr, 10); if (num > max) setValor(max.toString().padStart(2, '0')); else setValor(numStr);
@@ -47,7 +56,6 @@ export default function AdminScreen() {
   const handleCadastrarRecurso = () => {
     Keyboard.dismiss(); setAviso(''); setTipoAviso('');
     if (!nome.trim() || !minH || !minM || !maxH || !maxM) { setTipoAviso('erro'); setAviso('QA: Preencha todos os campos.'); return; }
-
     const minDecimal = parseInt(minH) + (parseInt(minM) / 60);
     const maxDecimal = parseInt(maxH) + (parseInt(maxM) / 60);
     if (minDecimal >= maxDecimal) { setTipoAviso('erro'); setAviso('QA: Mínimo maior/igual ao Máximo.'); return; }
@@ -59,8 +67,6 @@ export default function AdminScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
-      
-      {/* HEADER COM O BOTÃO ☀️/🌙 */}
       <View style={styles.headerAdmin}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <TouchableOpacity style={[styles.btnSairHeader, { borderColor: c.borda, backgroundColor: isDark ? '#18181B' : '#F8FAFC' }]} onPress={() => router.replace('/')}>
@@ -100,7 +106,6 @@ export default function AdminScreen() {
         </ScrollView>
       </ScrollView>
 
-      {/* MODAL DE CADASTRO COM TEMA DINÂMICO */}
       {modalCadastroVisivel && (
         <View style={styles.modalOverlayAdminAbsoluto}>
           <View style={[styles.modalContentAdmin, { backgroundColor: c.bg, borderColor: c.borda, borderWidth: 1 }]}>
@@ -113,7 +118,15 @@ export default function AdminScreen() {
             
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <Text style={[styles.labelModalAdmin, { color: c.textoSec }]}>Nome do Recurso</Text>
-              <TextInput style={[styles.inputModalAdmin, { backgroundColor: c.inputBg, color: c.textoPri, borderColor: c.borda }]} placeholder="Ex: Sala Maker" placeholderTextColor={c.textoSec} value={nome} onChangeText={setNome} />
+              
+              {/* 👉 IMPUT COM PLACEHOLDER DINÂMICO */}
+              <TextInput 
+                style={[styles.inputModalAdmin, { backgroundColor: c.inputBg, color: c.textoPri, borderColor: c.borda }]} 
+                placeholder={getPlaceholderCategoria(categoriaSelecionada.id)} 
+                placeholderTextColor={c.textoSec} 
+                value={nome} 
+                onChangeText={setNome} 
+              />
               
               <View style={[styles.blocoTempoAdmin, { backgroundColor: c.inputBg, borderColor: c.borda }]}>
                 <Text style={styles.labelTempoAdmin}>Tempo Mínimo (HH:MM)</Text>
@@ -133,23 +146,9 @@ export default function AdminScreen() {
                 </View>
               </View>
 
-              {/* MENSAGEM DE ERRO/SUCESSO DINÂMICA */}
               {aviso ? (
-                <View style={[
-                  styles.caixaMensagemAdmin, 
-                  { 
-                    backgroundColor: tipoAviso === 'erro' 
-                      ? (isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2') 
-                      : (isDark ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5'),
-                    borderLeftColor: tipoAviso === 'erro' ? '#EF4444' : '#10B981'
-                  }
-                ]}>
-                  <Text style={[
-                    styles.textoMensagemAdmin, 
-                    { color: tipoAviso === 'erro' ? (isDark ? '#FCA5A5' : '#B91C1C') : (isDark ? '#6EE7B7' : '#047857') }
-                  ]}>
-                    {aviso}
-                  </Text>
+                <View style={[styles.caixaMensagemAdmin, { backgroundColor: tipoAviso === 'erro' ? (isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2') : (isDark ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5'), borderLeftColor: tipoAviso === 'erro' ? '#EF4444' : '#10B981' }]}>
+                  <Text style={[styles.textoMensagemAdmin, { color: tipoAviso === 'erro' ? (isDark ? '#FCA5A5' : '#B91C1C') : (isDark ? '#6EE7B7' : '#047857') }]}>{aviso}</Text>
                 </View>
               ) : null}
 
@@ -163,6 +162,7 @@ export default function AdminScreen() {
   );
 }
 
+// ESTILOS INTACTOS
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24 },
   headerAdmin: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 24 },
