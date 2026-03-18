@@ -27,14 +27,28 @@ export default function LoginScreen() {
   };
 
   const handleLogin = () => {
-    Keyboard.dismiss(); setErro('');
-    if (matricula != 1234||9999 && senha != user||admin) {
-      setErro('Verifique sua matrícula e senha.'); return;
+    Keyboard.dismiss(); 
+    setErro('');
+
+    // 1. Cria os "pacotinhos" de quem tem permissão para entrar
+    const isUserValido = (matricula === '1234' && senha === 'user');
+    const isAdminValido = (matricula === '9999' && senha === 'admin');
+
+    // 2. Se a pessoa NÃO (!) for User E NÃO (!) for Admin, barra!
+    if (!isUserValido && !isAdminValido) {
+      setErro('Verifique sua matrícula e senha.'); 
+      return;
     }
+
+    // 3. Se passou da barreira, é sucesso!
     setSucesso(true);
     setTimeout(() => {
       setSucesso(false);
-      if (matricula === '9999') { router.replace('/admin'); } else { router.replace('/home'); }
+      if (matricula === '9999') { 
+        router.replace('/admin'); 
+      } else { 
+        router.replace('/home'); 
+      }
     }, 1500);
   };
 
