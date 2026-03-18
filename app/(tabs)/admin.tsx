@@ -3,19 +3,20 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Keyboa
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useRecursos } from '../../src/context/RecursosContext';
 
-// 
+// ATENÇÃO: Ajuste os nomes das imagens para bater com os arquivos exatos que você salvou em assets/images!
 const categorias = [
-{ id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/reuniao.png') },
-  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/equipamento.png') },
-  { id: 'VEICULO', nome: 'Veículos', imagem: require('../../assets/images/veiculo.png') },
-  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: require('../../assets/images/lab.png') },
+  { id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/cat-sala.png') },
+  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/cat-equip.png') },
+  { id: 'VEICULO', nome: 'Veículos', imagem: require('../../assets/images/cat-veic.png') },
+  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: require('../../assets/images/cat-lab.png') },
 ];
 
 export default function AdminScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const params = useLocalSearchParams(); 
   const { recursos, adicionarRecurso, tema, alternarTema } = useRecursos();
 
+  // 👉 Lógica do Toast de Boas-vindas (do Login)
   const [toastLogin, setToastLogin] = useState(params.login === 'true');
   React.useEffect(() => {
     if (toastLogin) { setTimeout(() => setToastLogin(false), 2000); }
@@ -43,7 +44,6 @@ export default function AdminScreen() {
     setCategoriaSelecionada(cat); setNome(''); setMinH(''); setMinM(''); setMaxH(''); setMaxM(''); setAviso(''); setModalCadastroVisivel(true);
   };
 
-  // 👉 LÓGICA DO PLACEHOLDER DINÂMICO
   const getPlaceholderCategoria = (idCat: string) => {
     switch(idCat) {
       case 'SALA': return 'Ex: Sala Maker';
@@ -62,11 +62,19 @@ export default function AdminScreen() {
   const handleCadastrarRecurso = () => {
     Keyboard.dismiss(); setAviso(''); setTipoAviso('');
     if (!nome.trim() || !minH || !minM || !maxH || !maxM) { setTipoAviso('erro'); setAviso('QA: Preencha todos os campos.'); return; }
+
+    // 👉 AQUI ENTRA A TRAVA DE QA NA CRIAÇÃO!
+    // Ele olha o banco de dados inteiro e bloqueia se achar o mesmo nome.
+    const nomeJaExiste = recursos.some(r => r.nome.toLowerCase().trim() === nome.toLowerCase().trim());
+    if (nomeJaExiste) {
+      setTipoAviso('erro'); setAviso('QA Block: Já existe uma infraestrutura cadastrada com este nome.'); return;
+    }
+
     const minDecimal = parseInt(minH) + (parseInt(minM) / 60);
     const maxDecimal = parseInt(maxH) + (parseInt(maxM) / 60);
     if (minDecimal >= maxDecimal) { setTipoAviso('erro'); setAviso('QA: Mínimo maior/igual ao Máximo.'); return; }
 
-    adicionarRecurso({ nome, tipo: categoriaSelecionada.id, minHoras: minDecimal, maxHoras: maxDecimal });
+    adicionarRecurso({ nome: nome.trim(), tipo: categoriaSelecionada.id, minHoras: minDecimal, maxHoras: maxDecimal });
     setTipoAviso('sucesso'); setAviso(`SUCESSO: ${nome} cadastrado.`);
     setTimeout(() => { setModalCadastroVisivel(false); }, 1500);
   };
@@ -74,7 +82,6 @@ export default function AdminScreen() {
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
       
-      {/* O AVISO DE LOGIN NO TOPO DO ADMIN */}
       {toastLogin && (
         <View style={styles.toastSucesso}>
           <Text style={styles.txtToastSucesso}>✓ Login Bem-Sucedido</Text>
@@ -132,8 +139,6 @@ export default function AdminScreen() {
             
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <Text style={[styles.labelModalAdmin, { color: c.textoSec }]}>Nome do Recurso</Text>
-              
-              {/* 👉 IMPUT COM PLACEHOLDER DINÂMICO */}
               <TextInput 
                 style={[styles.inputModalAdmin, { backgroundColor: c.inputBg, color: c.textoPri, borderColor: c.borda }]} 
                 placeholder={getPlaceholderCategoria(categoriaSelecionada.id)} 
@@ -176,9 +181,10 @@ export default function AdminScreen() {
   );
 }
 
-// ESTILOS INTACTOS
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24 },
+  toastSucesso: { position: 'absolute', top: 60, alignSelf: 'center', backgroundColor: '#ECFDF5', borderColor: '#10B981', borderWidth: 1, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24, zIndex: 9999 },
+  txtToastSucesso: { color: '#047857', fontSize: 14, fontWeight: 'bold' },
   headerAdmin: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, marginBottom: 24 },
   btnSairHeader: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1 },
   txtSairHeader: { color: '#EF4444', fontSize: 12, fontWeight: 'bold' },
@@ -213,6 +219,4 @@ const styles = StyleSheet.create({
   textoMensagemAdmin: { fontSize: 12, fontWeight: 'bold', textAlign: 'center' },
   btnConfirmarAdmin: { backgroundColor: '#0047AB', padding: 18, borderRadius: 12, alignItems: 'center' }, 
   txtConfirmarAdmin: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase' },
-  toastSucesso: { position: 'absolute', top: 60, alignSelf: 'center', backgroundColor: '#ECFDF5', borderColor: '#10B981', borderWidth: 1, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24, zIndex: 9999 },
-  txtToastSucesso: { color: '#047857', fontSize: 14, fontWeight: 'bold' },
 });
