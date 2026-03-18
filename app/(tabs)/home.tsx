@@ -3,12 +3,12 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Keyboa
 import { useRouter } from 'expo-router';
 import { useRecursos, Reserva, Recurso } from '../../src/context/RecursosContext';
 
-// Categorias e Imagens conforme o print de inspiração
+// Categorias usando URLs da web para não quebrar o build na Vercel
 const categoriasReserva = [
-  { id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/cat-sala.png') },
-  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/cat-equip.png') },
-  { id: 'VEICULO', nome: 'Veículos', imagem: require('../../assets/images/cat-veic.png') },
-  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: require('../../assets/images/cat-lab.png') },
+  { id: 'SALA', nome: 'Sala de Reunião', imagem: { uri: 'https://cdn-icons-png.flaticon.com/512/2942/2942933.png' } },
+  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: { uri: 'https://cdn-icons-png.flaticon.com/512/3004/3004100.png' } },
+  { id: 'VEICULO', nome: 'Veículos', imagem: { uri: 'https://cdn-icons-png.flaticon.com/512/2962/2962303.png' } },
+  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: { uri: 'https://cdn-icons-png.flaticon.com/512/933/933042.png' } },
 ];
 
 const formatarDataLocal = (ts: number) => { const d = new Date(ts); return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`; };
