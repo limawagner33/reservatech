@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useRecursos } from '../src/context/RecursosContext';
+import { useRecursos } from '../context/RecursosContext';
 
 export default function LoginScreen() {
   const router = useRouter();
