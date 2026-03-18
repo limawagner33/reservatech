@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, TextInp
 import { useRouter } from 'expo-router';
 import { useRecursos, Recurso } from '../../src/context/RecursosContext';
 
-// As mesmas categorias para o filtro
+// Categorias usadas tanto para o filtro quanto para a edição
 const categoriasFiltro = [
   { id: 'SALA', nome: 'Salas' },
   { id: 'EQUIPAMENTO', nome: 'Equipamentos' },
@@ -11,7 +11,6 @@ const categoriasFiltro = [
   { id: 'LABORATORIO', nome: 'Laboratórios' },
 ];
 
-// Função para formatar os decimais bizarros em texto limpo (ex: 1h30m)
 const formatarDuracaoVisual = (d: number) => { 
   if (!d) return '0m'; 
   const h = Math.floor(d); 
@@ -27,9 +26,12 @@ export default function AdminListaScreen() {
   
   const [filtroAtivo, setFiltroAtivo] = useState<string | null>(null);
 
-  // ESTADOS DO MODAL DE EDIÇÃO
+  // 👉 ESTADOS DO MODAL DE EDIÇÃO
   const [modalEditVisivel, setModalEditVisivel] = useState(false);
   const [recursoEditando, setRecursoEditando] = useState<Recurso | null>(null);
+  
+  // 👉 NOVO ESTADO: Categoria Editável
+  const [categoriaEdit, setCategoriaEdit] = useState('');
   const [nomeEdit, setNomeEdit] = useState('');
   const [minH, setMinH] = useState(''); const [minM, setMinM] = useState('');
   const [maxH, setMaxH] = useState(''); const [maxM, setMaxM] = useState('');
@@ -49,12 +51,11 @@ export default function AdminListaScreen() {
 
   const recursosVisiveis = filtroAtivo ? recursos.filter(r => r.tipo === filtroAtivo) : recursos;
 
-  // PREPARA OS DADOS PARA O MODAL
   const abrirEdicao = (recurso: Recurso) => {
     setRecursoEditando(recurso);
     setNomeEdit(recurso.nome);
+    setCategoriaEdit(recurso.tipo); // Puxa a categoria atual do banco
     
-    // Converte os decimais do banco de volta para os inputs de Hora e Minuto
     const minHFloor = Math.floor(recurso.minHoras);
     const minMFloor = Math.round((recurso.minHoras - minHFloor) * 60);
     setMinH(minHFloor.toString().padStart(2, '0'));
@@ -74,12 +75,12 @@ export default function AdminListaScreen() {
     const num = parseInt(numStr, 10); if (num > max) setValor(max.toString().padStart(2, '0')); else setValor(numStr);
   };
 
-  // A SALVAÇÃO E O QA (Bloqueio de Duplicadas)
   const handleSalvarEdicao = () => {
     Keyboard.dismiss(); setAviso(''); setTipoAviso('');
-    if (!nomeEdit.trim() || !minH || !minM || !maxH || !maxM) { setTipoAviso('erro'); setAviso('QA: Preencha todos os campos.'); return; }
+    if (!nomeEdit.trim() || !minH || !minM || !maxH || !maxM || !categoriaEdit) { 
+      setTipoAviso('erro'); setAviso('QA: Preencha todos os campos e selecione uma categoria.'); return; 
+    }
 
-    // 1. O Filtro de QA: Verifica se já existe OUTRO recurso com esse exato nome no sistema
     const nomeJaExiste = recursos.some(r => r.nome.toLowerCase().trim() === nomeEdit.toLowerCase().trim() && r.id !== recursoEditando?.id);
     if (nomeJaExiste) {
       setTipoAviso('erro'); setAviso('QA Block: Já existe uma infraestrutura cadastrada com este nome.'); return;
@@ -90,7 +91,14 @@ export default function AdminListaScreen() {
     if (minDecimal >= maxDecimal) { setTipoAviso('erro'); setAviso('QA: Mínimo deve ser menor que o Máximo.'); return; }
 
     if (recursoEditando) {
-      atualizarRecurso({ id: recursoEditando.id, tipo: recursoEditando.tipo, nome: nomeEdit.trim(), minHoras: minDecimal, maxHoras: maxDecimal });
+      // Salva puxando o state da categoriaEdit
+      atualizarRecurso({ 
+        id: recursoEditando.id, 
+        tipo: categoriaEdit, 
+        nome: nomeEdit.trim(), 
+        minHoras: minDecimal, 
+        maxHoras: maxDecimal 
+      });
       setTipoAviso('sucesso'); setAviso('SUCESSO: Recurso atualizado.');
       setTimeout(() => setModalEditVisivel(false), 1500);
     }
@@ -129,7 +137,6 @@ export default function AdminListaScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.txtTipo, { color: c.destaque }]}>{recurso.tipo}</Text>
                 <Text style={[styles.txtNome, { color: c.textoPri }]}>{recurso.nome}</Text>
-                {/* visualização corrigida sem quebrar a tela */}
                 <Text style={[styles.txtDetalhe, { color: c.textoSec }]}>Limites: {formatarDuracaoVisual(recurso.minHoras)} a {formatarDuracaoVisual(recurso.maxHoras)}</Text>
               </View>
               
@@ -152,10 +159,10 @@ export default function AdminListaScreen() {
         )}
       </ScrollView>
 
-      {/* MODAL DE EDIÇÃO */}
+      {/* 👉 MODAL DE EDIÇÃO */}
       {modalEditVisivel && recursoEditando && (
         <View style={styles.modalOverlayAbsoluto}>
-          <View style={[styles.modalContent, { backgroundColor: c.bg, borderColor: c.borda, borderWidth: 1 }]}>
+          <View style={[styles.modalContent, { backgroundColor: c.bg, borderColor: c.borda, borderWidth: 1, maxHeight: '90%' }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: c.textoPri }]}>Editar Recurso</Text>
               <TouchableOpacity onPress={() => setModalEditVisivel(false)} style={[styles.btnFecharModal, { backgroundColor: c.inputBg, borderColor: c.borda }]}>
@@ -164,6 +171,24 @@ export default function AdminListaScreen() {
             </View>
             
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              
+              {/* 👉 NOVO: SELETOR DE CATEGORIA NA EDIÇÃO */}
+              <Text style={[styles.labelModal, { color: c.textoSec }]}>Categoria</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
+                {categoriasFiltro.map(cat => (
+                  <TouchableOpacity 
+                    key={cat.id} 
+                    style={[styles.chipFiltro, { 
+                      backgroundColor: categoriaEdit === cat.id ? c.destaque : c.inputBg, 
+                      borderColor: categoriaEdit === cat.id ? c.destaque : c.borda 
+                    }]} 
+                    onPress={() => setCategoriaEdit(cat.id)}
+                  >
+                    <Text style={{ color: categoriaEdit === cat.id ? '#FFF' : c.textoSec, fontSize: 12, fontWeight: 'bold' }}>{cat.nome}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
               <Text style={[styles.labelModal, { color: c.textoSec }]}>Nome do Recurso</Text>
               <TextInput style={[styles.inputModal, { backgroundColor: c.inputBg, color: c.textoPri, borderColor: c.borda }]} value={nomeEdit} onChangeText={setNomeEdit} />
               
