@@ -3,12 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Keyboa
 import { useRouter } from 'expo-router';
 import { useRecursos } from '../../src/context/RecursosContext';
 
-// ATENÇÃO: Ajuste os nomes das imagens para bater com os arquivos exatos que você salvou em assets/images!
 const categorias = [
-  { id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/nome-da-sua-foto-sala.png') },
-  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/nome-da-sua-foto-equip.png') },
-  { id: 'VEICULO', nome: 'Veículos', imagem: require('../../assets/images/nome-da-sua-foto-veic.png') },
-  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: require('../../assets/images/nome-da-sua-foto-lab.png') },
+  { id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/reuniao.png') },
+  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/equipamento.png') },
+  { id: 'VEICULO', nome: 'Veículos', imagem: require('../../assets/images/veiculo.png') },
+  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: require('../../assets/images/lab.png') },
 ];
 
 export default function AdminScreen() {
