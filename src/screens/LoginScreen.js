@@ -28,7 +28,7 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     Keyboard.dismiss(); setErro('');
-    if (matricula.length != 1234||9999 && senha.length != user||admin) {
+    if (matricula != 1234||9999 && senha != user||admin) {
       setErro('Verifique sua matrícula e senha.'); return;
     }
     setSucesso(true);
