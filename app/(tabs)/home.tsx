@@ -3,12 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Keyboa
 import { useRouter } from 'expo-router';
 import { useRecursos, Reserva, Recurso } from '../../src/context/RecursosContext';
 
-// Categorias usando URLs da web corporativas (Estilo Unsplash)
 const categoriasReserva = [
-  { id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/cat-sala.png') },
-  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/cat-equip.png') },
-  { id: 'VEICULO', nome: 'Veículos', imagem: require('../../assets/images/cat-veic.png') },
-  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: require('../../assets/images/cat-lab.png') },
+  { id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/reuniao.png') },
+  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/equipamento.png') },
+  { id: 'VEICULO', nome: 'Veículos', imagem: require('../../assets/images/veiculo.png') },
+  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: require('../../assets/images/lab.png') },
 ];
 
 const formatarDataLocal = (ts: number) => { const d = new Date(ts); return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`; };
