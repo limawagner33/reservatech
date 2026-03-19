@@ -62,14 +62,14 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
 
   const handlePrepararReserva = () => {
     Keyboard.dismiss(); setAviso(''); setTipoAviso('');
-    if (matricula.length < 4 || !hIni || !mIni || !hFim || !mFim) { setTipoAviso('erro'); setAviso('QA: Preencha todos os campos.'); return; }
+    if (matricula.length < 4 || !hIni || !mIni || !hFim || !mFim) { setTipoAviso('erro'); setAviso('Preencha todos os campos.'); return; }
     const inicio = new Date(dataIni.getFullYear(), dataIni.getMonth(), dataIni.getDate(), parseInt(hIni), parseInt(mIni), 0).getTime();
     const fim = new Date(dataFim.getFullYear(), dataFim.getMonth(), dataFim.getDate(), parseInt(hFim), parseInt(mFim), 0).getTime();
     const agora = Date.now();
-    if (inicio <= agora) { setTipoAviso('erro'); setAviso('QA: Inicie no futuro.'); return; }
-    if (fim <= inicio) { setTipoAviso('erro'); setAviso('QA: O término deve ser superior ao início.'); return; }
+    if (inicio <= agora) { setTipoAviso('erro'); setAviso('Inicie com horário futuro.'); return; }
+    if (fim <= inicio) { setTipoAviso('erro'); setAviso('O término deve ser superior ao início.'); return; }
     const duracaoH = (fim - inicio) / 3600000;
-    if (duracaoH < recurso.minHoras || duracaoH > recurso.maxHoras) { setTipoAviso('erro'); setAviso(`QA: Exigido ${formatarDuracaoVisual(recurso.minHoras)} a ${formatarDuracaoVisual(recurso.maxHoras)}.`); return; }
+    if (duracaoH < recurso.minHoras || duracaoH > recurso.maxHoras) { setTipoAviso('erro'); setAviso(`Exigido ${formatarDuracaoVisual(recurso.minHoras)} a ${formatarDuracaoVisual(recurso.maxHoras)}.`); return; }
     
     setMostrarConfirmacao(true);
   };
@@ -173,13 +173,13 @@ export default function HomeScreen() {
   const isDark = tema === 'dark';
   const c = { bg: isDark ? '#09090B' : '#FFFFFF', card: isDark ? '#18181B' : '#FFFFFF', textoPri: isDark ? '#FAFAFA' : '#171717', textoSec: isDark ? '#A1A1AA' : '#52525B', borda: isDark ? '#27272A' : '#E2E8F0', destaque: '#0047AB' };
 
-  // 👉 CORREÇÃO: Agora sempre exibe a lista, mesmo se tiver apenas 1 recurso cadastrado
+  // sempre exibe a lista, mesmo se tiver apenas 1 recurso cadastrado
   const tentarReservarCategoria = (idCat: string) => {
     const recursosDessaCat = recursos.filter(r => r.tipo === idCat);
     if (recursosDessaCat.length === 0) {
       setToastSemCadastroVisivel(true); setTimeout(() => setToastSemCadastroVisivel(false), 4000); return;
     }
-    // Removido o atalho. Abre a lista independente da quantidade!
+    // Abre a lista independente da quantidade!
     setListaOpcoesVisivel(recursosDessaCat); 
   };
 
@@ -269,7 +269,7 @@ export default function HomeScreen() {
         </ScrollView>
       </ScrollView>
 
-      {/* 👉 MODAL DE SELEÇÃO ATUALIZADO (Exibe quantidade de reservas) */}
+      {/* MODAL DE SELEÇÃO ATUALIZADO (Exibe quantidade de reservas) */}
       {listaOpcoesVisivel.length > 0 && (
         <View style={styles.modalOverlayHomeAbsoluto}>
           <View style={[styles.modalContentHome, { backgroundColor: c.bg, borderColor: c.borda, maxHeight: '70%' }]}>
@@ -296,7 +296,7 @@ export default function HomeScreen() {
                       </View>
                     </View>
                     
-                    {/* 👉 O AVISO DE RESERVAS AGENDADAS */}
+                    {/* O AVISO DE RESERVAS AGENDADAS */}
                     <Text style={{ color: c.destaque, fontSize: 12, fontWeight: 'bold', marginTop: 12 }}>
                       Reservas agendadas ({item.reservas.length})
                     </Text>

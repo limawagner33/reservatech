@@ -25,11 +25,11 @@ export default function AdminListaScreen() {
   
   const [filtroAtivo, setFiltroAtivo] = useState<string | null>(null);
 
-  // 👉 ESTADOS DO MODAL DE EDIÇÃO
+  // ESTADOS DO MODAL DE EDIÇÃO
   const [modalEditVisivel, setModalEditVisivel] = useState(false);
   const [recursoEditando, setRecursoEditando] = useState<Recurso | null>(null);
   
-  // 👉 NOVO ESTADO: Modal de Exclusão (Substitui o window.confirm)
+  // NOVO ESTADO: Modal de Exclusão (Substitui o window.confirm)
   const [modalExcluirVisivel, setModalExcluirVisivel] = useState(false);
   const [idParaExcluir, setIdParaExcluir] = useState<number | null>(null);
 
@@ -80,17 +80,17 @@ export default function AdminListaScreen() {
   const handleSalvarEdicao = () => {
     Keyboard.dismiss(); setAviso(''); setTipoAviso('');
     if (!nomeEdit.trim() || !minH || !minM || !maxH || !maxM || !categoriaEdit) { 
-      setTipoAviso('erro'); setAviso('QA: Preencha todos os campos e selecione uma categoria.'); return; 
+      setTipoAviso('erro'); setAviso('Preencha todos os campos e selecione uma categoria.'); return; 
     }
 
     const nomeJaExiste = recursos.some(r => r.nome.toLowerCase().trim() === nomeEdit.toLowerCase().trim() && r.id !== recursoEditando?.id);
     if (nomeJaExiste) {
-      setTipoAviso('erro'); setAviso('QA Block: Já existe uma infraestrutura cadastrada com este nome.'); return;
+      setTipoAviso('erro'); setAviso('Já existe uma infraestrutura cadastrada com este nome.'); return;
     }
 
     const minDecimal = parseInt(minH) + (parseInt(minM) / 60);
     const maxDecimal = parseInt(maxH) + (parseInt(maxM) / 60);
-    if (minDecimal >= maxDecimal) { setTipoAviso('erro'); setAviso('QA: Mínimo deve ser menor que o Máximo.'); return; }
+    if (minDecimal >= maxDecimal) { setTipoAviso('erro'); setAviso('O Horário Mínimo deve ser menor que o Máximo.'); return; }
 
     if (recursoEditando) {
       atualizarRecurso({ id: recursoEditando.id, tipo: categoriaEdit, nome: nomeEdit.trim(), minHoras: minDecimal, maxHoras: maxDecimal });
@@ -99,7 +99,7 @@ export default function AdminListaScreen() {
     }
   };
 
-  // 👉 AÇÃO DE EXCLUSÃO DEFINITIVA
+  // AÇÃO DE EXCLUSÃO DEFINITIVA
   const confirmarExclusao = () => {
     if (idParaExcluir !== null) {
       excluirRecurso(idParaExcluir);
@@ -148,7 +148,7 @@ export default function AdminListaScreen() {
                 <TouchableOpacity style={[styles.btnAcao, { borderColor: c.destaque }]} onPress={() => abrirEdicao(recurso)}>
                   <Text style={{ color: c.destaque, fontWeight: 'bold', fontSize: 12 }}>Editar</Text>
                 </TouchableOpacity>
-                {/* 👉 BOTÃO EXCLUIR CHAMA O MODAL NOVO */}
+                {/* BOTÃO EXCLUIR CHAMA O MODAL NOVO */}
                 <TouchableOpacity style={[styles.btnAcao, { borderColor: c.perigo }]} onPress={() => {
                   setIdParaExcluir(recurso.id);
                   setModalExcluirVisivel(true);
@@ -161,7 +161,7 @@ export default function AdminListaScreen() {
         )}
       </ScrollView>
 
-      {/* --- 👉 MODAL DE CONFIRMAÇÃO DE EXCLUSÃO (Double Opt-in) --- */}
+      {/* ---  MODAL DE CONFIRMAÇÃO DE EXCLUSÃO (Double Opt-in) --- */}
       {modalExcluirVisivel && (
         <View style={[styles.modalOverlayAbsoluto, { zIndex: 2000, backgroundColor: 'rgba(0,0,0,0.85)' }]}>
           <View style={[styles.modalContent, { backgroundColor: c.bg, borderColor: c.borda, borderWidth: 1, padding: 32 }]}>

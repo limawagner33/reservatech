@@ -18,7 +18,7 @@ export interface Recurso {
   reservas: Reserva[];
 }
 
-// O CONTRATO DO TYPESCRIPT: Aqui a assinatura que faltava!
+// 
 interface RecursosContextData {
   recursos: Recurso[];
   adicionarRecurso: (recurso: Omit<Recurso, 'id' | 'reservas'>) => void;
@@ -88,7 +88,7 @@ export const RecursosProvider: React.FC<{children: React.ReactNode}> = ({ childr
     if (recursoAlvo) {
       // Bloqueio rigoroso (<= e >=)
       const conflito = recursoAlvo.reservas.some(res => (inicio <= res.fimTimestamp && fim >= res.inicioTimestamp));
-      if (conflito) throw new Error("QA Block: O horário se choca ou inicia no mesmo minuto de uma reserva existente.");
+      if (conflito) throw new Error("O horário se choca ou inicia no mesmo minuto de uma reserva existente.");
     }
 
     setRecursos((prev) => prev.map(recurso => {

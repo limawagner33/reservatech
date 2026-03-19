@@ -30,7 +30,7 @@ export default function LoginScreen() {
     Keyboard.dismiss(); 
     setErro('');
 
-    // criei os pacotinhos lógicos para ficar legível e não bugar
+    // os pacotinhos lógicos para ficar legível e não bugar
     const isUserValido = (matricula === '1234' && senha === 'user');
     const isAdminValido = (matricula === '9999' && senha === 'admin');
 

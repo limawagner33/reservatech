@@ -16,7 +16,7 @@ export default function AdminScreen() {
   const params = useLocalSearchParams(); 
   const { recursos, adicionarRecurso, tema, alternarTema } = useRecursos();
 
-  // 👉 Lógica do Toast de Boas-vindas (do Login)
+  // Lógica do Toast de Boas-vindas (do Login)
   const [toastLogin, setToastLogin] = useState(params.login === 'true');
   React.useEffect(() => {
     if (toastLogin) { setTimeout(() => setToastLogin(false), 2000); }
@@ -61,18 +61,18 @@ export default function AdminScreen() {
 
   const handleCadastrarRecurso = () => {
     Keyboard.dismiss(); setAviso(''); setTipoAviso('');
-    if (!nome.trim() || !minH || !minM || !maxH || !maxM) { setTipoAviso('erro'); setAviso('QA: Preencha todos os campos.'); return; }
+    if (!nome.trim() || !minH || !minM || !maxH || !maxM) { setTipoAviso('erro'); setAviso('Preencha todos os campos.'); return; }
 
-    // 👉 AQUI ENTRA A TRAVA DE QA NA CRIAÇÃO!
-    // Ele olha o banco de dados inteiro e bloqueia se achar o mesmo nome.
+    // AQUI ENTRA A TRAVA DE QA NA CRIAÇÃO!
+    // olha o banco de dados inteiro e bloqueia se achar o mesmo nome.
     const nomeJaExiste = recursos.some(r => r.nome.toLowerCase().trim() === nome.toLowerCase().trim());
     if (nomeJaExiste) {
-      setTipoAviso('erro'); setAviso('QA Block: Já existe uma infraestrutura cadastrada com este nome.'); return;
+      setTipoAviso('erro'); setAviso('Já existe uma infraestrutura cadastrada com este nome.'); return;
     }
 
     const minDecimal = parseInt(minH) + (parseInt(minM) / 60);
     const maxDecimal = parseInt(maxH) + (parseInt(maxM) / 60);
-    if (minDecimal >= maxDecimal) { setTipoAviso('erro'); setAviso('QA: Mínimo maior/igual ao Máximo.'); return; }
+    if (minDecimal >= maxDecimal) { setTipoAviso('erro'); setAviso('Horário Mínimo é maior/igual ao Máximo.'); return; }
 
     adicionarRecurso({ nome: nome.trim(), tipo: categoriaSelecionada.id, minHoras: minDecimal, maxHoras: maxDecimal });
     setTipoAviso('sucesso'); setAviso(`SUCESSO: ${nome} cadastrado.`);
