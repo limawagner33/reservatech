@@ -168,7 +168,7 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
 export default function HomeScreen() {
   const router = useRouter();
   const { recursos, notificacao, fecharNotificacao, finalizarReservaAutomatica, tema, alternarTema } = useRecursos();
-  
+  const params = useLocalSearchParams();
   const [recursoSelecionadoHome, setRecursoSelecionadoHome] = useState<Recurso | null>(null);
   const [toastSemCadastroVisivel, setToastSemCadastroVisivel] = useState(false);
   const [listaOpcoesVisivel, setListaOpcoesVisivel] = useState<Recurso[]>([]);
@@ -180,6 +180,11 @@ export default function HomeScreen() {
 
   const isDark = tema === 'dark';
   const c = { bg: isDark ? '#09090B' : '#FFFFFF', card: isDark ? '#18181B' : '#FFFFFF', textoPri: isDark ? '#FAFAFA' : '#171717', textoSec: isDark ? '#A1A1AA' : '#52525B', borda: isDark ? '#27272A' : '#E2E8F0', destaque: '#0047AB' };
+
+  const [toastLogin, setToastLogin] = useState(params.login === 'true');
+    React.useEffect(() => {
+      if (toastLogin) { setTimeout(() => setToastLogin(false), 2000); }
+    }, [toastLogin]);
 
   const tentarReservarCategoria = (idCat: string) => {
     const recursosDessaCat = recursos.filter(r => r.tipo === idCat);
@@ -195,6 +200,13 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
+
+      {toastLogin && (
+              <View style={styles.toastSucesso}>
+                <Text style={styles.txtToastSucesso}>✓ Login Bem-Sucedido</Text>
+              </View>
+      )}
+
       {notificacao && (
         <View style={[styles.toastContainerContext, { backgroundColor: c.card, borderColor: c.destaque }]}><Text style={[styles.toastTextContext, { color: c.textoPri }]}>{notificacao}</Text><TouchableOpacity onPress={fecharNotificacao}><Text style={styles.toastCloseContext}>X</Text></TouchableOpacity></View>
       )}
@@ -311,6 +323,8 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24 },
+  toastSucesso: { position: 'absolute', top: 60, alignSelf: 'center', backgroundColor: '#ECFDF5', borderColor: '#10B981', borderWidth: 1, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24, zIndex: 9999 },
+  txtToastSucesso: { color: '#047857', fontSize: 14, fontWeight: 'bold' },
   toastSemCadastroAdmin: { position: 'absolute', top: 50, right: 10, backgroundColor: '#B91C1C', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 16, zIndex: 9999, shadowColor: '#B91C1C', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5 },
   txtToastSemCadastro: { color: '#FFFFFF', fontSize: 10, fontWeight: 'bold' },
   toastContainerContext: { position: 'absolute', top: 60, right: 20, borderLeftWidth: 4, borderRadius: 8, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 9999 },
