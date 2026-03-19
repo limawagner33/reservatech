@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Keyboard, Platform, Image, Alert } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Keyboard, Platform, Image } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useRecursos, Reserva, Recurso } from '../../src/context/RecursosContext';
 
 // Categorias usando URLs da web corporativas (Estilo Unsplash)
 const categoriasReserva = [
-  { id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/reuniao.png') },
-  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/equipamento.png') },
-  { id: 'VEICULO', nome: 'Veículos', imagem: require('../../assets/images/veiculo.png') },
-  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: require('../../assets/images/lab.png') },
+  { id: 'SALA', nome: 'Sala de Reunião', imagem: require('../../assets/images/cat-sala.png') },
+  { id: 'EQUIPAMENTO', nome: 'Equipamentos', imagem: require('../../assets/images/cat-equip.png') },
+  { id: 'VEICULO', nome: 'Veículos', imagem: require('../../assets/images/cat-veic.png') },
+  { id: 'LABORATORIO', nome: 'Laboratórios', imagem: require('../../assets/images/cat-lab.png') },
 ];
 
 const formatarDataLocal = (ts: number) => { const d = new Date(ts); return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`; };
 const formatarHoraLocal = (ts: number) => { const d = new Date(ts); return `${d.getHours().toString().padStart(2, '0')}h${d.getMinutes().toString().padStart(2, '0')}`; };
-const formatarDuracaoVisual = (d: number) => { if (!d) return '0m'; const h = Math.floor(d); const m = Math.round((d - h) * 60); if (h === 0) return `${m}m`; if (m === 0) return `${h}h`; return `${h}h${m}m`; };
+const formatarDuracaoVisual = (d: number) => { if (!d) return '0m'; const h = Math.floor(d); const m = Math.round((d - h) * 60); if (h === 0) return `${m}m`; if (m === 0) return `${h}h`; return `${h}h${m.toString().padStart(2, '0')}m`; };
 
 const StatusReativoHome = ({ reserva, recurso, onExpirar, corDestaque }: { reserva: Reserva, recurso: Recurso, onExpirar: () => void, corDestaque: string }) => {
   const [texto, setTexto] = useState('');
@@ -54,7 +54,6 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
   const [hFim, setHFim] = useState(''); const [mFim, setMFim] = useState('');
   const [aviso, setAviso] = useState(''); const [tipoAviso, setTipoAviso] = useState<'erro' | 'sucesso' | ''>('');
   
-  // NOVO ESTADO: Controla o Alerta Personalizado
   const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
 
   const processarTempoForm = (valor: string, max: number, setValor: (v: string) => void) => {
@@ -62,7 +61,6 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
     const num = parseInt(numStr, 10); if (num > max) setValor(max.toString().padStart(2, '0')); else setValor(numStr);
   };
 
-  // APENAS VALIDA (Se estiver tudo certo, abre o alerta customizado)
   const handlePrepararReserva = () => {
     Keyboard.dismiss(); setAviso(''); setTipoAviso('');
     if (matricula.length < 4 || !hIni || !mIni || !hFim || !mFim) { setTipoAviso('erro'); setAviso('QA: Preencha todos os campos.'); return; }
@@ -74,11 +72,9 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
     const duracaoH = (fim - inicio) / 3600000;
     if (duracaoH < recurso.minHoras || duracaoH > recurso.maxHoras) { setTipoAviso('erro'); setAviso(`QA: Exigido ${formatarDuracaoVisual(recurso.minHoras)} a ${formatarDuracaoVisual(recurso.maxHoras)}.`); return; }
     
-    // Se passou na malha fina do QA, mostra o próprio Alerta!
     setMostrarConfirmacao(true);
   };
 
-  // EXECUTA A RESERVA DE FATO (Chamado quando o usuário clica "Sim" no Alerta)
   const executarReserva = () => {
     const inicio = new Date(dataIni.getFullYear(), dataIni.getMonth(), dataIni.getDate(), parseInt(hIni), parseInt(mIni), 0).getTime();
     const fim = new Date(dataFim.getFullYear(), dataFim.getMonth(), dataFim.getDate(), parseInt(hFim), parseInt(mFim), 0).getTime();
@@ -90,7 +86,6 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
 
   return (
     <View style={styles.modalOverlayHomeAbsoluto}>
-      {/* --- FORMULÁRIO PRINCIPAL --- */}
       <View style={[styles.modalContentHome, { backgroundColor: c.bgModal, borderColor: c.borda }]}>
         <View style={styles.modalHeaderHome}>
           <Text style={[styles.modalTitleHome, { color: c.textoPri }]}>{recurso.nome}</Text>
@@ -133,7 +128,6 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
         </ScrollView>
       </View>
 
-      {/* ALERTA PERSONALIZADO (Modal Sobreposto) --- */}
       {mostrarConfirmacao && (
         <View style={[styles.modalOverlayHomeAbsoluto, { zIndex: 2000, backgroundColor: 'rgba(0,0,0,0.85)' }]}>
           <View style={[styles.modalContentHome, { backgroundColor: c.bgModal, borderColor: c.borda, padding: 32 }]}>
@@ -168,12 +162,11 @@ const FormularioReservaHome = ({ recurso, dias, onClose, onSucesso }: { recurso:
 export default function HomeScreen() {
   const router = useRouter();
   const { recursos, notificacao, fecharNotificacao, finalizarReservaAutomatica, tema, alternarTema } = useRecursos();
-  const params = useLocalSearchParams();
+  
   const [recursoSelecionadoHome, setRecursoSelecionadoHome] = useState<Recurso | null>(null);
   const [toastSemCadastroVisivel, setToastSemCadastroVisivel] = useState(false);
   const [listaOpcoesVisivel, setListaOpcoesVisivel] = useState<Recurso[]>([]);
   
-  // NOVO ESTADO: Filtro da Lista de Reservados
   const [filtroReserva, setFiltroReserva] = useState<string | null>(null);
   
   const diasReserva = gerarDiasReserva();
@@ -181,32 +174,20 @@ export default function HomeScreen() {
   const isDark = tema === 'dark';
   const c = { bg: isDark ? '#09090B' : '#FFFFFF', card: isDark ? '#18181B' : '#FFFFFF', textoPri: isDark ? '#FAFAFA' : '#171717', textoSec: isDark ? '#A1A1AA' : '#52525B', borda: isDark ? '#27272A' : '#E2E8F0', destaque: '#0047AB' };
 
-  const [toastLogin, setToastLogin] = useState(params.login === 'true');
-    React.useEffect(() => {
-      if (toastLogin) { setTimeout(() => setToastLogin(false), 2000); }
-    }, [toastLogin]);
-
+  // 👉 CORREÇÃO: Agora sempre exibe a lista, mesmo se tiver apenas 1 recurso cadastrado
   const tentarReservarCategoria = (idCat: string) => {
     const recursosDessaCat = recursos.filter(r => r.tipo === idCat);
     if (recursosDessaCat.length === 0) {
       setToastSemCadastroVisivel(true); setTimeout(() => setToastSemCadastroVisivel(false), 4000); return;
     }
-    if (recursosDessaCat.length === 1) { setRecursoSelecionadoHome(recursosDessaCat[0]); } 
-    else { setListaOpcoesVisivel(recursosDessaCat); }
+    // Removido o atalho. Abre a lista independente da quantidade!
+    setListaOpcoesVisivel(recursosDessaCat); 
   };
 
-  // LÓGICA DO FILTRO: Retorna apenas recursos que têm reserva E que batem com o filtro atual
   const recursosReservadosFiltrados = recursos.filter(r => r.reservas.length > 0 && (filtroReserva ? r.tipo === filtroReserva : true));
 
   return (
     <View style={[styles.container, { backgroundColor: c.bg }]}>
-
-      {toastLogin && (
-              <View style={styles.toastSucesso}>
-                <Text style={styles.txtToastSucesso}>✓ Login Bem-Sucedido</Text>
-              </View>
-      )}
-
       {notificacao && (
         <View style={[styles.toastContainerContext, { backgroundColor: c.card, borderColor: c.destaque }]}><Text style={[styles.toastTextContext, { color: c.textoPri }]}>{notificacao}</Text><TouchableOpacity onPress={fecharNotificacao}><Text style={styles.toastCloseContext}>X</Text></TouchableOpacity></View>
       )}
@@ -242,7 +223,6 @@ export default function HomeScreen() {
           <Text style={[styles.txtReservadosHeaderHome, { color: c.textoPri }]}>Recursos reservados</Text>
         </View>
 
-        {/* UI DO FILTRO DE CATEGORIAS */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }} contentContainerStyle={{ paddingRight: 24 }}>
           <TouchableOpacity 
             style={[styles.chipFiltro, { backgroundColor: filtroReserva === null ? c.destaque : c.card, borderColor: filtroReserva === null ? c.destaque : c.borda }]} 
@@ -266,14 +246,11 @@ export default function HomeScreen() {
               return (
                 <View key={reserva.id} style={[styles.cardReservadoInspira, { backgroundColor: c.card, borderColor: c.borda }]}>
                   <Image source={categoriasReserva.find(cat => cat.id === recurso.tipo)?.imagem} style={styles.imgCardReservado} />
-                  
-                  {/* UI ATUALIZADA DO CARTÃO DE RESERVAS (Mais Detalhado) */}
                   <View style={styles.contentCardReservado}>
                     <View style={styles.rowEntreCard}>
                       <Text style={[styles.nomeRecursoCardHome, { color: c.textoPri }]}>{recurso.nome}</Text>
                       <StatusReativoHome reserva={reserva} recurso={recurso} onExpirar={() => finalizarReservaAutomatica(recurso.id, reserva.id, recurso.tipo, recurso.nome)} corDestaque={c.destaque} />
                     </View>
-                    
                     <View style={styles.detalhesReservaContainer}>
                       <Text style={[styles.txtDetalheLinha, { color: c.textoSec }]}>
                         <Text style={{ fontWeight: 'bold', color: c.textoPri }}>Início:</Text> {formatarDataLocal(reserva.inicioTimestamp)} às {formatarHoraLocal(reserva.inicioTimestamp)}
@@ -293,6 +270,7 @@ export default function HomeScreen() {
         </ScrollView>
       </ScrollView>
 
+      {/* 👉 MODAL DE SELEÇÃO ATUALIZADO (Exibe quantidade de reservas) */}
       {listaOpcoesVisivel.length > 0 && (
         <View style={styles.modalOverlayHomeAbsoluto}>
           <View style={[styles.modalContentHome, { backgroundColor: c.bg, borderColor: c.borda, maxHeight: '70%' }]}>
@@ -304,9 +282,25 @@ export default function HomeScreen() {
               </View>
               <ScrollView showsVerticalScrollIndicator={false}>
                 {listaOpcoesVisivel.map(item => (
-                  <TouchableOpacity key={item.id} style={[styles.btnOpcaoRecurso, { backgroundColor: isDark ? '#18181B' : '#F8FAFC', borderColor: c.borda }]} onPress={() => { setListaOpcoesVisivel([]); setRecursoSelecionadoHome(item); }}>
-                    <Text style={{ color: c.textoPri, fontWeight: 'bold', fontSize: 16 }}>{item.nome}</Text>
-                    <Text style={{ color: c.textoSec, fontSize: 12, marginTop: 4 }}>Limite: {formatarDuracaoVisual(item.minHoras)} a {formatarDuracaoVisual(item.maxHoras)}</Text>
+                  <TouchableOpacity 
+                    key={item.id} 
+                    style={[styles.btnOpcaoRecurso, { backgroundColor: isDark ? '#18181B' : '#F8FAFC', borderColor: c.borda }]}
+                    onPress={() => {
+                      setListaOpcoesVisivel([]); 
+                      setRecursoSelecionadoHome(item); 
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: c.textoPri, fontWeight: 'bold', fontSize: 16 }}>{item.nome}</Text>
+                        <Text style={{ color: c.textoSec, fontSize: 12, marginTop: 4 }}>Limite: {formatarDuracaoVisual(item.minHoras)} a {formatarDuracaoVisual(item.maxHoras)}</Text>
+                      </View>
+                    </View>
+                    
+                    {/* 👉 O AVISO DE RESERVAS AGENDADAS */}
+                    <Text style={{ color: c.destaque, fontSize: 12, fontWeight: 'bold', marginTop: 12 }}>
+                      Reservas agendadas ({item.reservas.length})
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -323,8 +317,6 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24 },
-  toastSucesso: { position: 'absolute', top: 60, alignSelf: 'center', backgroundColor: '#ECFDF5', borderColor: '#10B981', borderWidth: 1, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24, zIndex: 9999 },
-  txtToastSucesso: { color: '#047857', fontSize: 14, fontWeight: 'bold' },
   toastSemCadastroAdmin: { position: 'absolute', top: 50, right: 10, backgroundColor: '#B91C1C', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 16, zIndex: 9999, shadowColor: '#B91C1C', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 5 },
   txtToastSemCadastro: { color: '#FFFFFF', fontSize: 10, fontWeight: 'bold' },
   toastContainerContext: { position: 'absolute', top: 60, right: 20, borderLeftWidth: 4, borderRadius: 8, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 9999 },
